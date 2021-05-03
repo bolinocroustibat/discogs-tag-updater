@@ -1,0 +1,30 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+
+flac/
+*.flac
+*.mp3
+
+# vscode
+.vscode
+settings.json
+launch.json
+
+release/*
+
+discogs-token
+
+# pyinstaller
+build/*
+dist/*
+*.spec
+
+discogs_tag.ini
+discogs_tag.log
+
+*.log
+
+.python-version
