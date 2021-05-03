@@ -3,7 +3,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-
 flac/
 *.flac
 *.mp3
@@ -15,16 +14,18 @@ launch.json
 
 release/*
 
-discogs-token
+# Pyenv / Poetry
+.python-version
+poetry.lock
 
 # pyinstaller
 build/*
 dist/*
 *.spec
 
+discogs-token
+
 discogs_tag.ini
 discogs_tag.log
 
 *.log
-
-.python-version

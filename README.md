@@ -1,7 +1,7 @@
 # Discogs Tag Updater
 
 Fork from https://notabug.org/Aesir.
-Updates genre, year and image of .mp3 and .flac files based on title, artist using the Discogs database.
+Updates genre, year and image of .mp3 and .flac files based on title and artist using the Discogs database.
 
 ## Prerequisites
 
@@ -9,7 +9,14 @@ Updates genre, year and image of .mp3 and .flac files based on title, artist usi
 - Requires a Discogs developper account and free API key: [https://www.discogs.com/settings/developers](https://www.discogs.com/settings/developers)
 
 ## Install
+```sh
 poetry install
+```
+
+## Launch
+```sh
+poetry run python discogs_api-aesir.py
+```
 
 ## Config
 On the first run, it will ask for some inputs. You can change these variables after in the `discogs_tag.ini` file.  
