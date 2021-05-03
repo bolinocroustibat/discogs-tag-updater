@@ -1,7 +1,12 @@
-# Discogs Tag Updater  
-Updates genre, year based on title, artist  
-Requires Python 3.7  
-You will need a discogs account for the api to work [https://www.discogs.com/settings/developers](https://www.discogs.com/settings/developers)
+# Discogs Tag Updater
+
+Fork from https://notabug.org/Aesir.
+Updates genre, year and image of .mp3 and .flac files based on title, artist using the Discogs database.
+
+## Prerequisites
+
+- Requires Python 3.7 and [Poetry](https://python-poetry.org/).
+- Requires a Discogs developper account and free API key: [https://www.discogs.com/settings/developers](https://www.discogs.com/settings/developers)
 
 ## Install
 poetry install
