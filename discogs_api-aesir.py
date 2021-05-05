@@ -11,7 +11,7 @@ import requests
 
 # 2. third party
 import discogs_client as dc
-from colorama import Fore, init
+from colorama import Fore, Style, init
 from discogs_client.exceptions import HTTPError
 from fuzzywuzzy import process
 from mutagen.easyid3 import EasyID3
@@ -259,7 +259,7 @@ class DTag(object):
             print(Fore.RED + 'Track does not have the required tags for searching.')
             return False
 
-        print(Fore.YELLOW + 'Searching: {} {}'.format(self.title, self.artist))
+        print(Fore.YELLOW + f'Searching for "{self.title} {self.artist}"...')
         # discogs api limit: 60/1minute
         # retry option added
         time.sleep(0.5)
@@ -298,13 +298,13 @@ class DTag(object):
                 if res[best_one].images:
                     self.image = res[best_one].images[0]['uri']
             else:
-                print(Fore.RED + 'Not Found: {} {}'.format(self.title, self.artist))
+                print(Fore.RED + 'Not Found')
                 return False
         except HTTPError as e:
             if retry == 0:
-                print(f'Too many api calls, skipping {self}')
+                print(f'Too many API calls, skipping {self}')
                 return False
-            print(Fore.MAGENTA + 'Too many api calls retries left: {}, retrying in: 5 sec'.format(retry))
+            print(Fore.MAGENTA + f'Too many API calls. {retry} retries left, next retry in 5 sec.')
             time.sleep(5)
             self.search(retry=retry)
 
@@ -358,27 +358,27 @@ def main(root):
     files = {DTag(str(p), p.suffix, p.name) for p in Path(root).glob("**/*") if p.suffix in [".flac", ".mp3", ".m4a"]}
     for tag_file in files:
         total += 1
+        print(f'File: {tag_file.file_name}')
         log.info(tag_file.tags_log)
         if tag_file.search() is None:
             tag_file.save()
             found += 1
         else:
             not_found += 1
-        print(f'File: {tag_file.file_name}')
         if tag_file.genres_updated:
-            print(Fore.RESET + f'- Genres: was "{tag_file.local_genres}" ' + Fore.GREEN + f'updated to "{tag_file.genres}"')
+            print(Fore.RESET + '- Genres:  ' + Style.BRIGHT + tag_file.local_genres + Style.NORMAL + ' ➔ ' + Fore.GREEN  + Style.BRIGHT + tag_file.genres)
         else:
-            print(Fore.RESET + f'- Genres: was "{tag_file.local_genres}", not updated')
+            print(Fore.RESET + '- Genres:  ' + Style.BRIGHT + tag_file.local_genres + Style.NORMAL + ', not updated')
         if tag_file.year_updated:
-            print(Fore.RESET + f'- Year: was "{tag_file.local_year}" ' + Fore.GREEN + f'updated to "{tag_file.year}"')
+            print(Fore.RESET + '- Year:    ' + Style.BRIGHT + tag_file.local_year + Style.NORMAL + ' ➔ ' + Fore.GREEN  + Style.BRIGHT + tag_file.year)
         else:
-            print(Fore.RESET + f'- Year: was "{tag_file.local_year}", not updated')
+            print(Fore.RESET + '- Year:    ' + Style.BRIGHT + tag_file.local_year + Style.NORMAL + ', not updated')
         if tag_file.cover_updated:
-            print('- Cover: ' + Fore.GREEN + 'updated\n')
+            print('- Cover:   ' + Fore.GREEN + 'updated\n')
         else:
-            print('- Cover: not updated\n')
+            print('- Cover:   not updated\n')
 
-    print('Total Files {}, '.format(total) + Fore.GREEN + 'Found {}, '.format(found) + Fore.RED + 'Not Found: {}'.format(not_found))
+    print(f'Total Files {total}, ' + Fore.GREEN + f'Found {found}, ' + Fore.RED + f'Not Found: {not_found}')
     input("Press Enter to exit...")
 
 
