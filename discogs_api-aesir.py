@@ -36,7 +36,6 @@ class Cfg(object):
         self.overwrite_genre = parser.getboolean('discogs', 'overwrite_genre')
         self.embed_cover = parser.getboolean('discogs', 'embed_cover')
         self.overwrite_cover = parser.getboolean('discogs', 'overwrite_cover')
-        self.version = '1.2'
 
     def write():
         """write ini file, with current vars"""
