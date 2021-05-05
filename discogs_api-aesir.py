@@ -52,15 +52,17 @@ class DTag(object):
         self.cover_embedded = False
         self.artist = ''
         self.title = ''
-        self.local_styles = ''
-        self.styles = ''
+        self.local_genres = ''
+        self.genres = ''
         self.local_year = ''
         self.year = ''
         self._get_tag()
         self.year_found = False
         self.style_found = False
         self.image = False
-
+        self.year_updated = False
+        self.genres_updated = False
+        self.cover_updated = False
 
         # clean title and artist tags
         self.artist = clean(self.artist)
@@ -74,13 +76,13 @@ class DTag(object):
         tags = {
             'file': self.path,
             'local': {
-                'genre': self.local_styles,
+                'genre': self.local_genres,
                 'year': self.local_year,
                 'picture': self.cover_embedded
             },
             'discogs': {
                 'genre_found': self.style_found,
-                'genre': self.styles,
+                'genre': self.genres,
                 'year_found': self.year_found,
                 'year': self.year,
                 'image_found': True if self.image else False
@@ -95,7 +97,7 @@ class DTag(object):
                 self.artist = audio['artist'][0]
                 self.title = audio['title'][0]
                 if audio.get('genre'):
-                    self.local_styles = audio['genre'][0]
+                    self.local_genres = audio['genre'][0]
                 if audio.get('date'):
                     self.local_year = audio['date'][0]
 
@@ -110,7 +112,7 @@ class DTag(object):
                 self.artist = audio['artist'][0]
                 self.title = audio['title'][0]
                 if audio.get('genre'):
-                    self.local_styles = audio['genre'][0]
+                    self.local_genres = audio['genre'][0]
                 if audio.get('date'):
                     self.local_year = audio['date'][0]
 
@@ -129,7 +131,7 @@ class DTag(object):
                 self.artist = audio['\xa9ART'][0]
                 self.title = audio['\xa9nam'][0]
                 if audio.get('\xa9gen'):
-                    self.local_styles = audio['\xa9gen'][0]
+                    self.local_genres = audio['\xa9gen'][0]
                 if audio.get('\xa9day'):
                     self.local_year = audio['\xa9day'][0]
                 if audio.get('covr'):
@@ -158,17 +160,21 @@ class DTag(object):
             return
         if self.style_found:
             if cfg.overwrite_genre:
-                audio['genre'] = self.styles
+                audio['genre'] = self.genres
+                self.genres_updated = True
             else:
-                if self.local_styles == '':
-                    audio['genre'] = self.styles
+                if self.local_genres == '':
+                    audio['genre'] = self.genres
+                    self.genres_updated = True
 
         if self.year_found:
             if cfg.overwrite_year:
                 audio['date'] = self.year
+                self.year_updated = True
             else:
                 if self.local_year == '':
                     audio['date'] = self.year
+                    self.year_updated = True
         audio.save()
 
 
@@ -179,23 +185,28 @@ class DTag(object):
         audio = MP4(self.path)
         if self.style_found:
             if cfg.overwrite_genre:
-                audio['\xa9gen'] = self.styles
+                audio['\xa9gen'] = self.genres
+                self.genres_updated = True
             else:
-                if self.local_styles == '':
-                    audio['\xa9gen'] = self.styles
+                if self.local_genres == '':
+                    audio['\xa9gen'] = self.genres
+                    self.genres_updated = True
 
         if self.year_found:
             if cfg.overwrite_year:
                 audio['\xa9day'] = self.year
+                self.year_updated = True
             else:
                 if self.local_year == '':
                     audio['\xa9day'] = self.year
+                    self.year_updated = True
         # save image
         if self.image and cfg.embed_cover:
             if cfg.overwrite_cover:
                 audio['covr'] = [MP4Cover(
                     requests.get(self.image).content, imageformat=MP4Cover.FORMAT_JPEG
                 )]
+                self.cover_updated = True
         audio.save()
 
 
@@ -208,10 +219,12 @@ class DTag(object):
             if cfg.overwrite_cover:
                 audio.clear_pictures()
                 audio.add_picture(img)
+                self.cover_updated = True
             else:
                 if self.cover_embedded is False:
                     audio.clear_pictures()
                     audio.add_picture(img)
+                    self.cover_updated = True
             audio.save()
 
 
@@ -232,9 +245,11 @@ class DTag(object):
         if self.image and cfg.embed_cover:
             if cfg.overwrite_cover:
                 _update_image(self.path, requests.get(self.image).content)
+                self.cover_updated = True
             else:
                 if self.cover_embedded is False:
                     _update_image(self.path, requests.get(self.image).content)
+                    self.cover_updated = True
 
 
     def search(self, retry=3):
@@ -270,9 +285,9 @@ class DTag(object):
                 best_one = process.extractBests(local_string, discogs_list, limit=1)[0][0]['index']
 
                 # check if style is missing
-                if res[best_one].styles:
-                    styles = ', '.join(sorted([x for x in res[best_one].styles]))
-                    self.styles = styles
+                if res[best_one].genres:
+                    genres = ', '.join(sorted([x for x in res[best_one].genres]))
+                    self.genres = genres
                     self.style_found = True
 
                 if res[best_one].data['year']:
@@ -327,7 +342,7 @@ def main(root):
        @@@@@                ###########
             @@@@@@@@@@@@@@
 
-      Discogs Tag Updater by Aesir
+      Discogs Tag Updater by Aesir - updated by bolinocroustibat
 
     ''')
     # create discorgs session
@@ -343,15 +358,25 @@ def main(root):
     files = {DTag(str(p), p.suffix, p.name) for p in Path(root).glob("**/*") if p.suffix in [".flac", ".mp3", ".m4a"]}
     for tag_file in files:
         total += 1
+        log.info(tag_file.tags_log)
         if tag_file.search() is None:
-            log.info(tag_file.tags_log)
             tag_file.save()
             found += 1
         else:
-            log.info(tag_file.tags_log)
             not_found += 1
-
-        print(f'File: {tag_file.file_name}\nGenre: {tag_file.styles}\nYear: {tag_file.year}\n')
+        print(f'File: {tag_file.file_name}')
+        if tag_file.genres_updated:
+            print(Fore.RESET + f'- Genres: was "{tag_file.local_genres}" ' + Fore.GREEN + f'updated to "{tag_file.genres}"')
+        else:
+            print(Fore.RESET + f'- Genres: was "{tag_file.local_genres}", not updated')
+        if tag_file.year_updated:
+            print(Fore.RESET + f'- Year: was "{tag_file.local_year}" ' + Fore.GREEN + f'updated to "{tag_file.year}"')
+        else:
+            print(Fore.RESET + f'- Year: was "{tag_file.local_year}", not updated')
+        if tag_file.cover_updated:
+            print('- Cover: ' + Fore.GREEN + 'updated\n')
+        else:
+            print('- Cover: not updated\n')
 
     print('Total Files {}, '.format(total) + Fore.GREEN + 'Found {}, '.format(found) + Fore.RED + 'Not Found: {}'.format(not_found))
     input("Press Enter to exit...")
