@@ -342,7 +342,7 @@ def main(root):
        @@@@@                ###########
             @@@@@@@@@@@@@@
 
-      Discogs Tag Updater by Aesir - updated by bolinocroustibat
+      Discogs Tag Updater by Aesir
 
     ''')
     # create discorgs session
