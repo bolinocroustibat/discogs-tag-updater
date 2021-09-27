@@ -1,11 +1,12 @@
 # Discogs Tag Updater
 
-Fork from https://notabug.org/Aesir.
+Forked from https://notabug.org/Aesir.
+
 Updates genre, year and image of .mp3 and .flac files based on title and artist using the Discogs database.
 
 ## Prerequisites
 
-- Requires Python 3.7 and [Poetry](https://python-poetry.org/).
+- Requires Python >=3.7 and [Poetry](https://python-poetry.org/).
 - Requires a Discogs developper account and free API key: [https://www.discogs.com/settings/developers](https://www.discogs.com/settings/developers)
 
 ## Install
@@ -37,9 +38,6 @@ Enable or disable cover embedding feature. Will overwrite existing covers.
 `overwrite_cover = False`   
 If cover is set on the file, it will not overwrite it.  
 If cover is empty, it will add it.
-
-## Known Problems
-- If you are using the compiled mac version, the `discogs_tag.ini` file will be created under your user account `/User/<username>/discogs_tag.ini`
 
 ## See it in action
 [https://youtu.be/mWQZJS94p40](https://youtu.be/mWQZJS94p40)  
