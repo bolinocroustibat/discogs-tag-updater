@@ -45,30 +45,29 @@ class Cfg(object):
 
 
 class DTag(object):
-    def __init__(self, file, suffix, file_name: str):
-        self.path = file
-        self.file_name = file_name
-        self.suffix = suffix
+    def __init__(self, path: str, suffix: str, file_name: str):
+        self.path: str = path
+        self.file_name: str = file_name
+        self.suffix: str = suffix
         self.cover_embedded = False
-        self.artist = ""
-        self.title = ""
+        self.artist: str = ""
+        self.title: str = ""
         self.local_genres = ""
-        self.genres = ""
-        self.local_year = ""
-        self.year = ""
+        self.genres: str = ""
+        self.local_year: str = ""
+        self.year: str = ""
         self._get_tag()
-        self.year_found = False
-        self.style_found = False
-        self.image = False
-        self.year_updated = False
-        self.genres_updated = False
-        self.cover_updated = False
+        self.year_found: bool = False
+        self.style_found: bool = False
+        self.year_updated: bool = False
+        self.genres_updated: bool = False
+        self.cover_updated: bool = False
 
         # clean title and artist tags
-        self.artist = clean(self.artist)
-        self.title = clean(self.title)
+        self.artist: str = clean(string=self.artist)
+        self.title: str = clean(string=self.title)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"File: {self.path}"
 
     @property
@@ -85,7 +84,7 @@ class DTag(object):
                 "genre": self.genres,
                 "year_found": self.year_found,
                 "year": self.year,
-                "image_found": True if self.image else False,
+                "image_found": True if hasattr(self, "image") else False,
             },
         }
         return json.dumps(tags)
@@ -106,7 +105,7 @@ class DTag(object):
             except (FLACNoHeaderError, Exception) as e:
                 pass
 
-        if self.suffix == ".mp3":
+        elif self.suffix == ".mp3":
             try:
                 audio = EasyID3(self.path)
                 self.artist = audio["artist"][0]
@@ -124,9 +123,8 @@ class DTag(object):
             except (HeaderNotFoundError, MutagenError, KeyError) as e:
                 pass
 
-        if self.suffix == ".m4a":
+        elif self.suffix == ".m4a":
             try:
-
                 audio = MP4(self.path)
                 self.artist = audio["\xa9ART"][0]
                 self.title = audio["\xa9nam"][0]
@@ -146,17 +144,17 @@ class DTag(object):
         """
         if self.year_found is False and self.style_found is False:
             return
+
         if self.suffix == ".flac":
             self._image_flac()
             audio = FLAC(self.path)
-
-        if self.suffix == ".mp3":
+        elif self.suffix == ".mp3":
             self._image_mp3()
             audio = EasyID3(self.path)
-
-        if self.suffix == ".m4a":
+        elif self.suffix == ".m4a":
             self._save_m4a()
             return
+
         if self.style_found:
             if cfg.overwrite_genre:
                 audio["genre"] = self.genres
@@ -174,6 +172,7 @@ class DTag(object):
                 if self.local_year == "":
                     audio["date"] = self.year
                     self.year_updated = True
+
         audio.save()
 
     def _save_m4a(self) -> None:
@@ -199,7 +198,7 @@ class DTag(object):
                     audio["\xa9day"] = self.year
                     self.year_updated = True
         # save image
-        if self.image and cfg.embed_cover:
+        if hasattr(self, "image") and cfg.embed_cover:
             if cfg.overwrite_cover:
                 audio["covr"] = [
                     MP4Cover(
@@ -210,8 +209,8 @@ class DTag(object):
                 self.cover_updated = True
         audio.save()
 
-    def _image_flac(self):
-        if self.image and cfg.embed_cover:
+    def _image_flac(self) -> None:
+        if hasattr(self, "image") and cfg.embed_cover:
             audio = FLAC(self.path)
             img = Picture()
             img.type = 3
@@ -242,7 +241,7 @@ class DTag(object):
             audio.save()
 
         # check if image was found
-        if self.image and cfg.embed_cover:
+        if hasattr(self, "image") and cfg.embed_cover:
             if cfg.overwrite_cover:
                 _update_image(self.path, requests.get(self.image).content)
                 self.cover_updated = True
@@ -357,17 +356,19 @@ def main(directory: str) -> None:
     if not os.path.exists(directory):
         print(Fore.RED + f'Directory "{directory}" not found.')
         sys.exit(1)
+
     # create discogs session
     me = ds.identity()
     print(f"{me}")
     log.info("Discogs Tag started")
+
     log.info(f"Looking for files in {directory}")
     print(Fore.YELLOW + "Indexing audio files... Please wait\n")
-    not_found = 0
-    found = 0
-    total = 0
+    not_found: int = 0
+    found: int = 0
+    total: int = 0
     files = {
-        DTag(str(p), p.suffix, p.name)
+        DTag(path=str(p), suffix=p.suffix, file_name=p.name)
         for p in Path(directory).glob("**/*")
         if p.suffix in [".flac", ".mp3", ".m4a"]
     }
