@@ -58,7 +58,7 @@ class DTag(object):
         self.year: str = ""
         self._get_tag()
         self.year_found: bool = False
-        self.style_found: bool = False
+        self.genres_found: bool = False
         self.year_updated: bool = False
         self.genres_updated: bool = False
         self.cover_updated: bool = False
@@ -80,7 +80,7 @@ class DTag(object):
                 "picture": self.cover_embedded,
             },
             "discogs": {
-                "genre_found": self.style_found,
+                "genre_found": self.genres_found,
                 "genre": self.genres,
                 "year_found": self.year_found,
                 "year": self.year,
@@ -142,7 +142,7 @@ class DTag(object):
         flac and mp3 support the same keys from mutagen,
         .m4a does not
         """
-        if self.year_found is False and self.style_found is False:
+        if self.year_found is False and self.genres_found is False:
             return
 
         if self.suffix == ".flac":
@@ -155,7 +155,7 @@ class DTag(object):
             self._save_m4a()
             return
 
-        if self.style_found:
+        if self.genres_found and (self.local_genres != self.genres):
             if cfg.overwrite_genre:
                 audio["genre"] = self.genres
                 self.genres_updated = True
@@ -164,7 +164,7 @@ class DTag(object):
                     audio["genre"] = self.genres
                     self.genres_updated = True
 
-        if self.year_found:
+        if self.year_found and (self.local_year != self.year):
             if cfg.overwrite_year:
                 audio["date"] = self.year
                 self.year_updated = True
@@ -180,7 +180,7 @@ class DTag(object):
         code duplication from self.save
         """
         audio = MP4(self.path)
-        if self.style_found:
+        if self.genres_found and (self.local_genres != self.genres):
             if cfg.overwrite_genre:
                 audio["\xa9gen"] = self.genres
                 self.genres_updated = True
@@ -189,7 +189,7 @@ class DTag(object):
                     audio["\xa9gen"] = self.genres
                     self.genres_updated = True
 
-        if self.year_found:
+        if self.year_found and (self.local_year != self.year):
             if cfg.overwrite_year:
                 audio["\xa9day"] = self.year
                 self.year_updated = True
@@ -254,10 +254,10 @@ class DTag(object):
         retry -= 1
         # check if track has required tags for searching
         if self.artist == "" and self.title == "":
-            print(Fore.RED + "Track does not have the required tags for searching.")
+            print(Fore.RED + "Track does not have the required tags for searching on Discogs.")
             return False
 
-        print(Fore.YELLOW + f'Searching for "{self.title} {self.artist}"...')
+        print(Fore.YELLOW + f'Searching for "{self.title} {self.artist} on Discogs"...')
         # discogs api limit: 60/1minute
         # retry option added
         time.sleep(0.5)
@@ -284,11 +284,11 @@ class DTag(object):
                     0
                 ]["index"]
 
-                # check if style is missing
+                # check if genre is missing
                 if res[best_one].genres:
                     genres = ", ".join(sorted([x for x in res[best_one].genres]))
                     self.genres = genres
-                    self.style_found = True
+                    self.genres_found = True
 
                 if res[best_one].data["year"]:
                     year = res[best_one].data["year"]
@@ -298,7 +298,7 @@ class DTag(object):
                 if res[best_one].images:
                     self.image = res[best_one].images[0]["uri"]
             else:
-                print(Fore.RED + "Not Found")
+                print(Fore.RED + "Not Found on Discogs.")
                 return False
         except HTTPError as e:
             if retry == 0:
