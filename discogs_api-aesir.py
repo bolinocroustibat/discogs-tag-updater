@@ -1,15 +1,15 @@
-# 1. standard
+from configparser import ConfigParser
+import json
 import logging
 import logging.handlers
 import os
-import re
-import time
-import json
-from configparser import ConfigParser
 from pathlib import Path
+import re
 import requests
+import sys
+import time
+from typing import Optional
 
-# 2. third party
 import discogs_client as dc
 from colorama import Fore, Style, init
 from discogs_client.exceptions import HTTPError
@@ -29,7 +29,7 @@ init(autoreset=True)
 
 
 class Cfg(object):
-    def __init__(self):
+    def __init__(self) -> None:
         parser.read(INI_PATH)
         self.token = parser.get("discogs", "token")
         self.media_path = parser.get("discogs", "path")
@@ -38,14 +38,14 @@ class Cfg(object):
         self.embed_cover = parser.getboolean("discogs", "embed_cover")
         self.overwrite_cover = parser.getboolean("discogs", "overwrite_cover")
 
-    def write():
+    def write() -> None:
         """write ini file, with current vars"""
         with open(INI_PATH, "w") as f:
             parser.write(f)
 
 
 class DTag(object):
-    def __init__(self, file, suffix, file_name):
+    def __init__(self, file, suffix, file_name: str):
         self.path = file
         self.file_name = file_name
         self.suffix = suffix
@@ -72,7 +72,7 @@ class DTag(object):
         return f"File: {self.path}"
 
     @property
-    def tags_log(self):
+    def tags_log(self) -> str:
         tags = {
             "file": self.path,
             "local": {
@@ -90,7 +90,7 @@ class DTag(object):
         }
         return json.dumps(tags)
 
-    def _get_tag(self):
+    def _get_tag(self) -> None:
         if self.suffix == ".flac":
             try:
                 audio = FLAC(self.path)
@@ -139,7 +139,7 @@ class DTag(object):
             except (KeyError, MP4StreamInfoError, MutagenError) as e:
                 pass
 
-    def save(self):
+    def save(self) -> None:
         """
         flac and mp3 support the same keys from mutagen,
         .m4a does not
@@ -176,7 +176,7 @@ class DTag(object):
                     self.year_updated = True
         audio.save()
 
-    def _save_m4a(self):
+    def _save_m4a(self) -> None:
         """
         code duplication from self.save
         """
@@ -227,8 +227,8 @@ class DTag(object):
                     self.cover_updated = True
             audio.save()
 
-    def _image_mp3(self):
-        def _update_image(path, data):
+    def _image_mp3(self) -> None:
+        def _update_image(path: str, data: bytes) -> None:
             # del image
             audio_id3 = ID3(path)
             audio_id3.delall("APIC")
@@ -251,7 +251,7 @@ class DTag(object):
                     _update_image(self.path, requests.get(self.image).content)
                     self.cover_updated = True
 
-    def search(self, retry=3):
+    def search(self, retry: int = 3) -> Optional[bool]:
         retry -= 1
         # check if track has required tags for searching
         if self.artist == "" and self.title == "":
@@ -313,7 +313,7 @@ class DTag(object):
             self.search(retry=retry)
 
 
-def clean(string):
+def clean(string: str) -> str:
     string = re.sub(r"\([^)]*\)", "", string).strip()
     if "," in string:
         string = string.split(",")[0].strip()
@@ -325,7 +325,7 @@ def clean(string):
     return string
 
 
-def main(root):
+def main(directory: str) -> None:
     print(
         """
               @@@@@@@@@@@@
@@ -352,19 +352,23 @@ def main(root):
 
     """
     )
-    # create discorgs session
+    print(f"Directory: {directory}")
+    # check if directory path exists and valid
+    if not os.path.exists(directory):
+        print(Fore.RED + f'Directory "{directory}" not found.')
+        sys.exit(1)
+    # create discogs session
     me = ds.identity()
     print(f"{me}")
-    print(f"Directory: {root}")
     log.info("Discogs Tag started")
-    log.info(f"Looking for files in {root}")
-    print(Fore.GREEN + "Indexing audio files... Please wait\n")
+    log.info(f"Looking for files in {directory}")
+    print(Fore.YELLOW + "Indexing audio files... Please wait\n")
     not_found = 0
     found = 0
     total = 0
     files = {
         DTag(str(p), p.suffix, p.name)
-        for p in Path(root).glob("**/*")
+        for p in Path(directory).glob("**/*")
         if p.suffix in [".flac", ".mp3", ".m4a"]
     }
     for tag_file in files:
@@ -514,4 +518,4 @@ if __name__ == "__main__":
 
     # init discogs session
     ds = dc.Client("discogs_tag/0.5", user_token=cfg.token)
-    main(cfg.media_path)
+    main(directory=cfg.media_path)
