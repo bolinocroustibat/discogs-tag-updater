@@ -6,17 +6,25 @@ Updates genre, year and image of .mp3 and .flac files based on title and artist 
 
 ## Prerequisites
 
-- Requires Python >=3.7 and [Poetry](https://python-poetry.org/).
+- Requires Python >=3.7 and a modern Python environement manager like [Poetry](https://python-poetry.org/) or [PDM](https://pdm.fming.dev/).
 - Requires a Discogs developper account and free API key: [https://www.discogs.com/settings/developers](https://www.discogs.com/settings/developers)
 
 ## Install
 ```sh
 poetry install
 ```
+or
+```sh
+pdm install
+```
 
 ## Launch
 ```sh
 poetry run python discogs_api-aesir.py
+```
+or
+```sh
+pdm run python discogs_api-aesir.py
 ```
 
 ## Config

@@ -14,9 +14,11 @@ launch.json
 
 release/*
 
-# Pyenv / Poetry
+# Pyenv / Poetry / PDM
 .python-version
 poetry.lock
+.pdm.toml
+pdm.lock
 
 # pyinstaller
 build/*
