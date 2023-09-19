@@ -1,10 +1,10 @@
 [project]
 name = "discogs-tag-updater"
-version = "1.3.1"
+version = "1.4.0"
 description = "Updates genre, year and covers tags of .mp3 and .flac files based on track title and artist using the Discogs database."
 authors = [
     { name = "Aesir" },
-    { name = "Adrien Carpentier", email = "moi@adriencarpentier.com" },
+    { name = "bolinocroustibat", email = "me@adriencarpentier.com" },
 ]
 dependencies = [
     "colorama<1.0.0,>=0.4.4",
@@ -33,13 +33,14 @@ fuzzywuzzy = "^0.18.0"
 mutagen = "^1.45.1"
 requests = "^2.25.1"
 
-[tool.poetry.dev-dependencies]
-
-
 [tool.pdm]
 includes = []
 [tool.pdm.dev-dependencies]
-dev = []
+dev = [
+    "black>=23.3.0",
+    "ruff>=0.0.290",
+    "mypy>=1.4.1",
+]
 [build-system]
 requires = ["pdm-pep517"]
 build-backend = "pdm.pep517.api"

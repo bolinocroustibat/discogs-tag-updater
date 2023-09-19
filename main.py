@@ -1,15 +1,15 @@
-from configparser import ConfigParser
 import json
 import logging
 import logging.handlers
 import os
-from pathlib import Path
 import re
-import requests
 import sys
 import time
+from configparser import ConfigParser
+from pathlib import Path
 from typing import Optional
 
+import requests
 import discogs_client as dc
 from colorama import Fore, Style, init
 from discogs_client.exceptions import HTTPError
@@ -37,6 +37,7 @@ class Cfg(object):
         self.overwrite_genre = parser.getboolean("discogs", "overwrite_genre")
         self.embed_cover = parser.getboolean("discogs", "embed_cover")
         self.overwrite_cover = parser.getboolean("discogs", "overwrite_cover")
+        self.rename_file = parser.getboolean("discogs", "rename_file")
 
     def write() -> None:
         """write ini file, with current vars"""
@@ -45,9 +46,9 @@ class Cfg(object):
 
 
 class DTag(object):
-    def __init__(self, path: str, suffix: str, file_name: str):
+    def __init__(self, path: str, suffix: str, filename: str) -> None:
         self.path: str = path
-        self.file_name: str = file_name
+        self.filename: str = filename
         self.suffix: str = suffix
         self.cover_embedded = False
         self.artist: str = ""
@@ -102,7 +103,7 @@ class DTag(object):
 
                 if audio.pictures:
                     self.cover_embedded = True
-            except (FLACNoHeaderError, Exception) as e:
+            except (FLACNoHeaderError, Exception):
                 pass
 
         elif self.suffix == ".mp3":
@@ -120,7 +121,7 @@ class DTag(object):
                     if "covr" in k or "APIC" in k:
                         self.cover_embedded = True
 
-            except (HeaderNotFoundError, MutagenError, KeyError) as e:
+            except (HeaderNotFoundError, MutagenError, KeyError):
                 pass
 
         elif self.suffix == ".m4a":
@@ -134,7 +135,7 @@ class DTag(object):
                     self.local_year = audio["\xa9day"][0]
                 if audio.get("covr"):
                     self.cover_embedded = True
-            except (KeyError, MP4StreamInfoError, MutagenError) as e:
+            except (KeyError, MP4StreamInfoError, MutagenError):
                 pass
 
     def save(self) -> None:
@@ -254,7 +255,10 @@ class DTag(object):
         retry -= 1
         # check if track has required tags for searching
         if self.artist == "" and self.title == "":
-            print(Fore.RED + "Track does not have the required tags for searching on Discogs.")
+            print(
+                Fore.RED
+                + "Track does not have the required tags for searching on Discogs."
+            )
             return False
 
         print(Fore.YELLOW + f'Searching for "{self.title} {self.artist} on Discogs"...')
@@ -266,7 +270,6 @@ class DTag(object):
             local_string = f"{self.title} {self.artist}"
             discogs_list = []
             if res.count > 0:
-
                 for i, track in enumerate(res):
                     d_artist = ""
                     if track.data.get("artist"):
@@ -300,7 +303,7 @@ class DTag(object):
             else:
                 print(Fore.RED + "Not Found on Discogs.")
                 return False
-        except HTTPError as e:
+        except HTTPError:
             if retry == 0:
                 print(f"Too many API calls, skipping {self}")
                 return False
@@ -366,21 +369,52 @@ def main(directory: str) -> None:
     print(Fore.YELLOW + "Indexing audio files... Please wait\n")
     not_found: int = 0
     found: int = 0
+    renamed: int = 0
     total: int = 0
     files = {
-        DTag(path=str(p), suffix=p.suffix, file_name=p.name)
+        DTag(path=str(p), suffix=p.suffix, filename=p.name)
         for p in Path(directory).glob("**/*")
         if p.suffix in [".flac", ".mp3", ".m4a"]
     }
     for tag_file in files:
         total += 1
-        print(f"File: {tag_file.file_name}")
+        print(
+            "____________________________________"
+            + f"File: {tag_file.filename}"
+        )
         log.info(tag_file.tags_log)
+
+        # Rename file
+        new_filename: str = f"{tag_file.artist} - {tag_file.title}{tag_file.suffix}"
+        if (
+            cfg.rename_file
+            and tag_file.artist
+            and tag_file.title
+            and (tag_file.filename != new_filename)
+        ):
+            new_path: Path = Path(tag_file.path).parent / new_filename
+            os.rename(tag_file.path, new_path)
+            renamed += 1
+            print(
+                Fore.RESET
+                + "Renamed: "
+                + Style.BRIGHT
+                + tag_file.filename
+                + Style.NORMAL
+                + " ➔ "
+                + Fore.GREEN
+                + Style.BRIGHT
+                + new_filename
+            )
+
+        # Search on Discogs and update
         if tag_file.search() is None:
             tag_file.save()
             found += 1
         else:
             not_found += 1
+
+        # Print file results info on terminal
         if tag_file.genres_updated:
             print(
                 Fore.RESET
@@ -400,7 +434,7 @@ def main(directory: str) -> None:
                 + Style.BRIGHT
                 + tag_file.local_genres
                 + Style.NORMAL
-                + ", not updated"
+                + " ➔ not updated"
             )
         if tag_file.year_updated:
             print(
@@ -421,19 +455,22 @@ def main(directory: str) -> None:
                 + Style.BRIGHT
                 + tag_file.local_year
                 + Style.NORMAL
-                + ", not updated"
+                + " ➔ not updated"
             )
         if tag_file.cover_updated:
-            print("- Cover:   " + Fore.GREEN + "updated\n")
+            print("- Cover:   ➔ " + Fore.GREEN + "updated\n")
         else:
-            print("- Cover:   not updated\n")
+            print("- Cover:   ➔ not updated\n")
 
     print(
-        f"Total Files {total}, "
+        Style.BRIGHT
+        + f"Total files: {total}\n"
         + Fore.GREEN
-        + f"Found {found}, "
+        + f"With Discogs info found: {found}\n"
         + Fore.RED
-        + f"Not Found: {not_found}"
+        + f"With Discogs info not found: {not_found}\n"
+        + Fore.YELLOW
+        + f"Renamed: {renamed}\n"
     )
     input("Press Enter to exit...")
 
@@ -482,6 +519,13 @@ if __name__ == "__main__":
         else:
             overwrite_cover = False
 
+        # File renaming
+        rename_file = input("Rename files like [artist] - [track].xxx [true/FALSE] -> ")
+        if rename_file.lower() == "true":
+            rename_file = True
+        else:
+            rename_file = False
+
         # write config file
         with open(INI_PATH, "w") as f:
             f.write("[discogs]\n")
@@ -491,6 +535,7 @@ if __name__ == "__main__":
             f.write(f"overwrite_genre = {overwrite_genre}\n")
             f.write(f"embed_cover = {cover_download}\n")
             f.write(f"overwrite_cover = {overwrite_cover}\n")
+            f.write(f"rename_file = {rename_file}\n")
 
     # config file exists now
     cfg = Cfg()
@@ -500,7 +545,7 @@ if __name__ == "__main__":
     log.setLevel(20)
 
     # handler
-    five_mbytes = 10 ** 6 * 5
+    five_mbytes = 10**6 * 5
     handler = logging.handlers.RotatingFileHandler(
         "discogs_tag.log", maxBytes=five_mbytes, encoding="UTF-8", backupCount=0
     )
