@@ -1,6 +1,4 @@
 import json
-import logging
-import logging.handlers
 import os
 import re
 import sys
@@ -16,9 +14,11 @@ from discogs_client.exceptions import HTTPError
 from fuzzywuzzy import process
 from mutagen.easyid3 import EasyID3
 from mutagen.flac import FLAC, FLACNoHeaderError, Picture
-from mutagen.id3 import APIC, ID3
-from mutagen.mp3 import MP3, HeaderNotFoundError, MutagenError
+from mutagen.id3 import ID3
+from mutagen.id3._frames import APIC
+from mutagen.mp3 import MP3, HeaderNotFoundError
 from mutagen.mp4 import MP4, MP4Cover, MP4StreamInfoError
+from mutagen._util import MutagenError
 
 TOKEN_PATH = "discogs-token"
 INI_PATH = "discogs_tag.ini"
@@ -28,17 +28,18 @@ parser = ConfigParser()
 init(autoreset=True)
 
 
-class Cfg(object):
+class Config(object):
     def __init__(self) -> None:
         parser.read(INI_PATH)
         self.token = parser.get("discogs", "token")
-        self.media_path = parser.get("discogs", "path")
+        self.media_path = Path(parser.get("discogs", "path"))
         self.overwrite_year = parser.getboolean("discogs", "overwrite_year")
         self.overwrite_genre = parser.getboolean("discogs", "overwrite_genre")
         self.embed_cover = parser.getboolean("discogs", "embed_cover")
         self.overwrite_cover = parser.getboolean("discogs", "overwrite_cover")
         self.rename_file = parser.getboolean("discogs", "rename_file")
 
+    @staticmethod
     def write() -> None:
         """write ini file, with current vars"""
         with open(INI_PATH, "w") as f:
@@ -46,8 +47,8 @@ class Cfg(object):
 
 
 class DTag(object):
-    def __init__(self, path: str, suffix: str, filename: str) -> None:
-        self.path: str = path
+    def __init__(self, path: Path, suffix: str, filename: str) -> None:
+        self.path: Path = path
         self.filename: str = filename
         self.suffix: str = suffix
         self.cover_embedded = False
@@ -74,7 +75,7 @@ class DTag(object):
     @property
     def tags_log(self) -> str:
         tags = {
-            "file": self.path,
+            "file": str(self.path),
             "local": {
                 "genre": self.local_genres,
                 "year": self.local_year,
@@ -157,7 +158,7 @@ class DTag(object):
             return
 
         if self.genres_found and (self.local_genres != self.genres):
-            if cfg.overwrite_genre:
+            if config.overwrite_genre:
                 audio["genre"] = self.genres
                 self.genres_updated = True
             else:
@@ -166,7 +167,7 @@ class DTag(object):
                     self.genres_updated = True
 
         if self.year_found and (self.local_year != self.year):
-            if cfg.overwrite_year:
+            if config.overwrite_year:
                 audio["date"] = self.year
                 self.year_updated = True
             else:
@@ -182,7 +183,7 @@ class DTag(object):
         """
         audio = MP4(self.path)
         if self.genres_found and (self.local_genres != self.genres):
-            if cfg.overwrite_genre:
+            if config.overwrite_genre:
                 audio["\xa9gen"] = self.genres
                 self.genres_updated = True
             else:
@@ -191,7 +192,7 @@ class DTag(object):
                     self.genres_updated = True
 
         if self.year_found and (self.local_year != self.year):
-            if cfg.overwrite_year:
+            if config.overwrite_year:
                 audio["\xa9day"] = self.year
                 self.year_updated = True
             else:
@@ -199,8 +200,8 @@ class DTag(object):
                     audio["\xa9day"] = self.year
                     self.year_updated = True
         # save image
-        if hasattr(self, "image") and cfg.embed_cover:
-            if cfg.overwrite_cover:
+        if hasattr(self, "image") and config.embed_cover:
+            if config.overwrite_cover:
                 audio["covr"] = [
                     MP4Cover(
                         requests.get(self.image).content,
@@ -211,12 +212,12 @@ class DTag(object):
         audio.save()
 
     def _image_flac(self) -> None:
-        if hasattr(self, "image") and cfg.embed_cover:
+        if hasattr(self, "image") and config.embed_cover:
             audio = FLAC(self.path)
             img = Picture()
             img.type = 3
             img.data = requests.get(self.image).content
-            if cfg.overwrite_cover:
+            if config.overwrite_cover:
                 audio.clear_pictures()
                 audio.add_picture(img)
                 self.cover_updated = True
@@ -228,7 +229,7 @@ class DTag(object):
             audio.save()
 
     def _image_mp3(self) -> None:
-        def _update_image(path: str, data: bytes) -> None:
+        def _update_image(path: Path, data: bytes) -> None:
             # del image
             audio_id3 = ID3(path)
             audio_id3.delall("APIC")
@@ -242,8 +243,8 @@ class DTag(object):
             audio.save()
 
         # check if image was found
-        if hasattr(self, "image") and cfg.embed_cover:
-            if cfg.overwrite_cover:
+        if hasattr(self, "image") and config.embed_cover:
+            if config.overwrite_cover:
                 _update_image(self.path, requests.get(self.image).content)
                 self.cover_updated = True
             else:
@@ -327,7 +328,7 @@ def clean(string: str) -> str:
     return string
 
 
-def main(directory: str) -> None:
+def main(directory: Path) -> None:
     print(
         """
               @@@@@@@@@@@@
@@ -354,46 +355,46 @@ def main(directory: str) -> None:
 
     """
     )
-    print(f"Directory: {directory}")
     # check if directory path exists and valid
-    if not os.path.exists(directory):
+    if not directory.is_dir():
         print(Fore.RED + f'Directory "{directory}" not found.')
         sys.exit(1)
 
     # create discogs session
     me = ds.identity()
-    print(f"{me}")
-    log.info("Discogs Tag started")
+    print(f"Discogs User: {me}")
 
-    log.info(f"Looking for files in {directory}")
+    print(f"Looking for files in {directory}")
     print(Fore.YELLOW + "Indexing audio files... Please wait\n")
     not_found: int = 0
     found: int = 0
     renamed: int = 0
     total: int = 0
     files = {
-        DTag(path=str(p), suffix=p.suffix, filename=p.name)
+        DTag(path=p, suffix=p.suffix, filename=p.name)
         for p in Path(directory).glob("**/*")
         if p.suffix in [".flac", ".mp3", ".m4a"]
     }
     for tag_file in files:
         total += 1
         print(
-            "____________________________________"
+            "____________________________________________________________________\n"
             + f"File: {tag_file.filename}"
         )
-        log.info(tag_file.tags_log)
+        # print(tag_file.tags_log)
 
         # Rename file
-        new_filename: str = f"{tag_file.artist} - {tag_file.title}{tag_file.suffix}"
+        new_filename_start: str = f"{tag_file.artist} - {tag_file.title}"
         if (
-            cfg.rename_file
+            config.rename_file
             and tag_file.artist
             and tag_file.title
-            and (tag_file.filename != new_filename)
+            and (not tag_file.filename.startswith(new_filename_start)) # TODO: improve with regex to keep the parenthesis and brackets
         ):
+            new_filename: str = f"{new_filename_start}{tag_file.suffix}"
             new_path: Path = Path(tag_file.path).parent / new_filename
             os.rename(tag_file.path, new_path)
+            tag_file.path = new_path
             renamed += 1
             print(
                 Fore.RESET
@@ -477,7 +478,7 @@ def main(directory: str) -> None:
 
 if __name__ == "__main__":
     # read config
-    if os.path.exists(INI_PATH) is False:
+    if Path(INI_PATH).is_file() is False:
         # first run
         print("\n\n\n")
         print(Fore.GREEN + "First run, config file will be created.")
@@ -538,30 +539,8 @@ if __name__ == "__main__":
             f.write(f"rename_file = {rename_file}\n")
 
     # config file exists now
-    cfg = Cfg()
-
-    # logger
-    log = logging.getLogger("discogs_tag")
-    log.setLevel(20)
-
-    # handler
-    five_mbytes = 10**6 * 5
-    handler = logging.handlers.RotatingFileHandler(
-        "discogs_tag.log", maxBytes=five_mbytes, encoding="UTF-8", backupCount=0
-    )
-    handler.setLevel(20)
-
-    # create formater
-    formatter = logging.Formatter(
-        "%(asctime)s - %(levelname)s - %(message)s", "%Y-%m-%d %H:%M:%S"
-    )
-
-    # add formater to handler
-    handler.setFormatter(formatter)
-
-    # add handler to logger
-    log.addHandler(handler)
+    config = Config()
 
     # init discogs session
-    ds = dc.Client("discogs_tag/0.5", user_token=cfg.token)
-    main(directory=cfg.media_path)
+    ds = dc.Client("discogs_tag/0.5", user_token=config.token)
+    main(directory=config.media_path)

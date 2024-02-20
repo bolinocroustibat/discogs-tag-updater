@@ -1,6 +1,6 @@
 [project]
 name = "discogs-tag-updater"
-version = "1.4.0"
+version = "1.5.0"
 description = "Updates genre, year and covers tags of .mp3 and .flac files based on track title and artist using the Discogs database."
 authors = [
     { name = "Aesir" },
@@ -13,11 +13,16 @@ dependencies = [
     "mutagen<2.0.0,>=1.45.1",
     "requests<3.0.0,>=2.25.1",
 ]
-requires-python = ">=3.7,<4.0"
+requires-python = "<4.0,>=3.7,"
 license = { text = "MIT" }
 
 [project.urls]
 homepage = ""
+
+[tool]
+rye = { dev-dependencies = [
+    "ruff>=0.2.2",
+] }
 
 [tool.poetry]
 name = "discogs-tag-updater"
@@ -37,9 +42,7 @@ requests = "^2.25.1"
 includes = []
 [tool.pdm.dev-dependencies]
 dev = [
-    "black>=23.3.0",
-    "ruff>=0.0.290",
-    "mypy>=1.4.1",
+    "ruff>=0.2.2",
 ]
 [build-system]
 requires = ["pdm-pep517"]
