@@ -272,12 +272,8 @@ class DTag(object):
         # retry option added
         time.sleep(0.5)
         try:
-            # Add timeout to the search operation
-            start_time = time.time()
+            # Use original code without timeout modification
             res = ds.search(type="master", artist=self.artist, track=self.title)
-            if time.time() - start_time > 10:
-                logger.error("Search timed out after 10 seconds, skipping...")
-                return False
             
             local_string = f"{self.title} {self.artist}"
             discogs_list = []
