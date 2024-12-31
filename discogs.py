@@ -274,7 +274,7 @@ class DTag(object):
         try:
             # Use original code without timeout modification
             res = ds.search(type="master", artist=self.artist, track=self.title)
-            
+
             local_string = f"{self.title} {self.artist}"
             discogs_list = []
             if res.count > 0:
