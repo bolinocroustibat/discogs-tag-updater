@@ -9,7 +9,7 @@ from typing import Optional
 
 import requests
 import discogs_client as dc
-from colorama import Fore, Style, init
+from colorama import Fore, init
 from discogs_client.exceptions import HTTPError
 from fuzzywuzzy import process
 from mutagen.easyid3 import EasyID3
@@ -20,22 +20,25 @@ from mutagen.mp3 import MP3, HeaderNotFoundError
 from mutagen.mp4 import MP4, MP4Cover, MP4StreamInfoError
 from mutagen._util import MutagenError
 from logger import FileLogger
+import inquirer
 
 TOKEN_PATH = "discogs-token"
-INI_PATH = "discogs_tag.ini"
+INI_PATH = "config.ini"
 parser = ConfigParser()
 
 # colorama
 init(autoreset=True)
 
-logger = FileLogger()
+logger = FileLogger("discogs.log")
 
 
 class Config(object):
     def __init__(self) -> None:
         parser.read(INI_PATH)
+        # Remove escape characters from the path and convert to Path object
+        raw_path = parser.get("common", "path").replace("\\", "")
+        self.media_path = Path(raw_path)
         self.token = parser.get("discogs", "token")
-        self.media_path = Path(parser.get("discogs", "path"))
         self.overwrite_year = parser.getboolean("discogs", "overwrite_year")
         self.overwrite_genre = parser.getboolean("discogs", "overwrite_genre")
         self.embed_cover = parser.getboolean("discogs", "embed_cover")
@@ -259,15 +262,23 @@ class DTag(object):
         retry -= 1
         # check if track has required tags for searching
         if self.artist == "" and self.title == "":
-            logger.error("Track does not have the required tags for searching on Discogs.")
+            logger.error(
+                "Track does not have the required tags for searching on Discogs."
+            )
             return False
 
-        logger.info(f'Searching for "{self.title} {self.artist} on Discogs"...')
+        logger.info(f'Searching for "{self.title} {self.artist}" on Discogs...')
         # discogs api limit: 60/1minute
         # retry option added
         time.sleep(0.5)
         try:
+            # Add timeout to the search operation
+            start_time = time.time()
             res = ds.search(type="master", artist=self.artist, track=self.title)
+            if time.time() - start_time > 10:
+                logger.error("Search timed out after 10 seconds, skipping...")
+                return False
+            
             local_string = f"{self.title} {self.artist}"
             discogs_list = []
             if res.count > 0:
@@ -389,16 +400,16 @@ def main(directory: Path) -> None:
             config.rename_file
             and tag_file.artist
             and tag_file.title
-            and (not tag_file.filename.startswith(new_filename_start)) # TODO: improve with regex to keep the parenthesis and brackets
+            and (
+                not tag_file.filename.startswith(new_filename_start)
+            )  # TODO: improve with regex to keep the parenthesis and brackets
         ):
             new_filename: str = f"{new_filename_start}{tag_file.suffix}"
             new_path: Path = Path(tag_file.path).parent / new_filename
             os.rename(tag_file.path, new_path)
             tag_file.path = new_path
             renamed += 1
-            logger.success(
-                f"Renamed: {tag_file.filename} ➔ {new_filename}"
-            )
+            logger.success(f"Renamed: {tag_file.filename} ➔ {new_filename}")
 
         # Search on Discogs and update
         if tag_file.search() is None:
@@ -433,64 +444,52 @@ def main(directory: Path) -> None:
 if __name__ == "__main__":
     # read config
     if Path(INI_PATH).is_file() is False:
-        # first run
         print("\n\n\n")
         print(Fore.GREEN + "First run, config file will be created.")
-        print(
-            "If multiple options are available they will be in square brackets. The one in uppercase is the default value."
-        )
-        token = input("Discogs token -> ")
-        media_path = input("Media Path -> ")
-        if media_path == "":
-            media_path = os.path.dirname(os.path.abspath(__file__))
-        # apple user
+
+        questions = [
+            inquirer.Text("token", message="Enter your Discogs token"),
+            inquirer.Text(
+                "media_path",
+                message="Enter media path",
+                default=os.path.dirname(os.path.abspath(__file__)),
+            ),
+            inquirer.Confirm(
+                "overwrite_year", message="Overwrite existing year tags?", default=True
+            ),
+            inquirer.Confirm(
+                "overwrite_genre",
+                message="Overwrite existing genre tags?",
+                default=True,
+            ),
+            inquirer.Confirm("embed_cover", message="Embed cover art?", default=False),
+            inquirer.Confirm(
+                "overwrite_cover", message="Overwrite existing cover?", default=False
+            ),
+            inquirer.Confirm(
+                "rename_file",
+                message="Rename files as [artist] - [track].xxx?",
+                default=False,
+            ),
+        ]
+
+        answers = inquirer.prompt(questions)
+
+        # Handle macOS path
         if os.name == "posix":
-            media_path = media_path.replace("\\", "")
-
-        # year tag
-        overwrite_year = input("Overwrite Year Tag [TRUE/false] -> ")
-        if overwrite_year.lower() == "false":
-            overwrite_year = False
-        else:
-            overwrite_year = True
-
-        # genre tag
-        overwrite_genre = input("Overwrite Genre Tag [TRUE/false] -> ")
-        if overwrite_genre.lower() == "false":
-            overwrite_genre = False
-        else:
-            overwrite_genre = True
-
-        # cover options
-        cover_download = input("Embed Cover Art [true/FALSE] -> ")
-        if cover_download.lower() == "true":
-            cover_download = True
-        else:
-            cover_download = False
-
-        overwrite_cover = input("Overwrite existing cover [true/FALSE] -> ")
-        if overwrite_cover.lower() == "true":
-            overwrite_cover = True
-        else:
-            overwrite_cover = False
-
-        # File renaming
-        rename_file = input("Rename files like [artist] - [track].xxx [true/FALSE] -> ")
-        if rename_file.lower() == "true":
-            rename_file = True
-        else:
-            rename_file = False
+            answers["media_path"] = answers["media_path"].replace("\\", "")
 
         # write config file
         with open(INI_PATH, "w") as f:
+            f.write("[common]\n")
+            f.write(f"path = {answers['media_path']}\n\n")
             f.write("[discogs]\n")
-            f.write(f"token = {token}\n")
-            f.write(f"path = {media_path}\n")
-            f.write(f"overwrite_year = {overwrite_year}\n")
-            f.write(f"overwrite_genre = {overwrite_genre}\n")
-            f.write(f"embed_cover = {cover_download}\n")
-            f.write(f"overwrite_cover = {overwrite_cover}\n")
-            f.write(f"rename_file = {rename_file}\n")
+            f.write(f"token = {answers['token']}\n")
+            f.write(f"overwrite_year = {answers['overwrite_year']}\n")
+            f.write(f"overwrite_genre = {answers['overwrite_genre']}\n")
+            f.write(f"embed_cover = {answers['embed_cover']}\n")
+            f.write(f"overwrite_cover = {answers['overwrite_cover']}\n")
+            f.write(f"rename_file = {answers['rename_file']}\n")
 
     # config file exists now
     config = Config()

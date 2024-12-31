@@ -1,0 +1,14 @@
+[discogs]
+token = your_token
+path = /your/mp3/path/
+overwrite_year = True
+overwrite_genre = True
+embed_cover = True
+overwrite_cover = True
+rename_file = True
+
+[spotify]
+client_id = your_client_id
+client_secret = your_client_secret
+playlist_id = your_playlist_id
+redirect_uri = http://localhost:8888/callback

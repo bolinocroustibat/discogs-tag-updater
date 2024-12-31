@@ -153,10 +153,6 @@ dmypy.json
 flac/
 *.flac
 *.mp3
-
 discogs-token
-
-discogs_tag.ini
-discogs_tag.log
-
+config.ini
 *.log
