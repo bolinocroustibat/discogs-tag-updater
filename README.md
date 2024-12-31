@@ -11,20 +11,12 @@ Updates genre, year and image of .mp3 and .flac files based on title and artist 
 
 ## Install
 ```sh
-poetry install
-```
-or
-```sh
-pdm install
+uv sync
 ```
 
 ## Launch
 ```sh
-poetry run python3 main.py
-```
-or
-```sh
-pdm run python3 main.py
+uv run main.py
 ```
 
 ## Config
