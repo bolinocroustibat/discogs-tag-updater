@@ -19,6 +19,7 @@ from mutagen.id3._frames import APIC
 from mutagen.mp3 import MP3, HeaderNotFoundError
 from mutagen.mp4 import MP4, MP4Cover, MP4StreamInfoError
 from mutagen._util import MutagenError
+from logger import FileLogger
 
 TOKEN_PATH = "discogs-token"
 INI_PATH = "discogs_tag.ini"
@@ -26,6 +27,8 @@ parser = ConfigParser()
 
 # colorama
 init(autoreset=True)
+
+logger = FileLogger()
 
 
 class Config(object):
@@ -256,13 +259,10 @@ class DTag(object):
         retry -= 1
         # check if track has required tags for searching
         if self.artist == "" and self.title == "":
-            print(
-                Fore.RED
-                + "Track does not have the required tags for searching on Discogs."
-            )
+            logger.error("Track does not have the required tags for searching on Discogs.")
             return False
 
-        print(Fore.YELLOW + f'Searching for "{self.title} {self.artist} on Discogs"...')
+        logger.info(f'Searching for "{self.title} {self.artist} on Discogs"...')
         # discogs api limit: 60/1minute
         # retry option added
         time.sleep(0.5)
@@ -329,7 +329,7 @@ def clean(string: str) -> str:
 
 
 def main(directory: Path) -> None:
-    print(
+    logger.log(
         """
               @@@@@@@@@@@@
           @@@               ###########
@@ -357,15 +357,15 @@ def main(directory: Path) -> None:
     )
     # check if directory path exists and valid
     if not directory.is_dir():
-        print(Fore.RED + f'Directory "{directory}" not found.')
+        logger.error(f'Directory "{directory}" not found.')
         sys.exit(1)
 
     # create discogs session
     me = ds.identity()
-    print(f"Discogs User: {me}")
+    logger.log(f"Discogs User: {me}")
 
-    print(f"Looking for files in {directory}")
-    print(Fore.YELLOW + "Indexing audio files... Please wait\n")
+    logger.log(f"Looking for files in {directory}")
+    logger.warning("Indexing audio files... Please wait\n")
     not_found: int = 0
     found: int = 0
     renamed: int = 0
@@ -377,7 +377,7 @@ def main(directory: Path) -> None:
     }
     for tag_file in files:
         total += 1
-        print(
+        logger.log(
             "____________________________________________________________________\n"
             + f"File: {tag_file.filename}"
         )
@@ -396,16 +396,8 @@ def main(directory: Path) -> None:
             os.rename(tag_file.path, new_path)
             tag_file.path = new_path
             renamed += 1
-            print(
-                Fore.RESET
-                + "Renamed: "
-                + Style.BRIGHT
-                + tag_file.filename
-                + Style.NORMAL
-                + " ➔ "
-                + Fore.GREEN
-                + Style.BRIGHT
-                + new_filename
+            logger.success(
+                f"Renamed: {tag_file.filename} ➔ {new_filename}"
             )
 
         # Search on Discogs and update
@@ -415,64 +407,26 @@ def main(directory: Path) -> None:
         else:
             not_found += 1
 
-        # Print file results info on terminal
+        # Print file results info
         if tag_file.genres_updated:
-            print(
-                Fore.RESET
-                + "- Genres:  "
-                + Style.BRIGHT
-                + tag_file.local_genres
-                + Style.NORMAL
-                + " ➔ "
-                + Fore.GREEN
-                + Style.BRIGHT
-                + tag_file.genres
-            )
+            logger.success(f"- Genres: {tag_file.local_genres} ➔ {tag_file.genres}")
         else:
-            print(
-                Fore.RESET
-                + "- Genres:  "
-                + Style.BRIGHT
-                + tag_file.local_genres
-                + Style.NORMAL
-                + " ➔ not updated"
-            )
-        if tag_file.year_updated:
-            print(
-                Fore.RESET
-                + "- Year:    "
-                + Style.BRIGHT
-                + tag_file.local_year
-                + Style.NORMAL
-                + " ➔ "
-                + Fore.GREEN
-                + Style.BRIGHT
-                + tag_file.year
-            )
-        else:
-            print(
-                Fore.RESET
-                + "- Year:    "
-                + Style.BRIGHT
-                + tag_file.local_year
-                + Style.NORMAL
-                + " ➔ not updated"
-            )
-        if tag_file.cover_updated:
-            print("- Cover:   ➔ " + Fore.GREEN + "updated\n")
-        else:
-            print("- Cover:   ➔ not updated\n")
+            logger.log(f"- Genres: {tag_file.local_genres} ➔ not updated")
 
-    print(
-        Style.BRIGHT
-        + f"Total files: {total}\n"
-        + Fore.GREEN
-        + f"With Discogs info found: {found}\n"
-        + Fore.RED
-        + f"With Discogs info not found: {not_found}\n"
-        + Fore.YELLOW
-        + f"Renamed: {renamed}\n"
-    )
+        if tag_file.year_updated:
+            logger.success(f"- Year: {tag_file.local_year} ➔ {tag_file.year}")
+        else:
+            logger.log(f"- Year: {tag_file.local_year} ➔ not updated")
+
+        if tag_file.cover_updated:
+            logger.success("- Cover: ➔ updated\n")
+        else:
+            logger.log("- Cover: ➔ not updated\n")
+
+    logger.log(f"Total files: {total}")
+    logger.success(f"With Discogs info found: {found}")
+    logger.error(f"With Discogs info not found: {not_found}")
+    logger.warning(f"Renamed: {renamed}\n")
     input("Press Enter to exit...")
 
 
