@@ -196,7 +196,7 @@ def main() -> None:
 
                 try:
                     sp.playlist_add_items(playlist_id, [track_id])
-                    logger.success("Track added to Spotify playlist")
+                    logger.success("Track added to Spotify playlist.")
                     tracks_added += 1
                     time.sleep(1)  # Rate limiting
                 except Exception as e:

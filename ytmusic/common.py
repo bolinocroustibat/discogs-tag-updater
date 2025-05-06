@@ -200,7 +200,7 @@ def select_playlist(ytm: YTMusic, playlist_id: str | None = None) -> str:
     if playlist_id:
         try:
             playlist = ytm.get_playlist(playlist_id)
-            logger.success(f'Using YouTube Music playlist: "{playlist["title"]}"')
+            logger.success(f'Using YouTube Music playlist "{playlist["title"]}"')
             return playlist_id
         except Exception as e:
             logger.error(f"Error accessing playlist: {e}")
@@ -233,5 +233,5 @@ def select_playlist(ytm: YTMusic, playlist_id: str | None = None) -> str:
 
     selected_id = answers["playlist_id"]
     selected_name = next(p["name"] for p in playlists if p["id"] == selected_id)
-    logger.success(f'Using YouTube Music playlist: "{selected_name}"')
+    logger.success(f'Using YouTube Music playlist "{selected_name}"')
     return selected_id
