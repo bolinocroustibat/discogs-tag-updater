@@ -67,7 +67,7 @@ def search_spotify(
 def select_match(sp: spotipy.Spotify, matches: list[dict]) -> str | None:
     """Let user select a match from the list of potential matches"""
     # Show all potential matches
-    logger.info("\nPotential matches from Spotify:")
+    logger.info("\nPotential matches on Spotify:")
     for i, track in enumerate(matches, 1):
         logger.info(f"{i}. Track: {track['name']}")
         logger.info(f"   Artist: {track['artist']}")
