@@ -167,3 +167,32 @@ For each track found, you'll be prompted to confirm whether you want to add it t
 - In `spotify/add_tracks.py`: Compare Spotify matches with local files BEFORE asking user for match selection
   - This will help identify the best match automatically
   - Only ask user if no exact match is found
+
+### Code Refactoring for Django Backend
+- Refactor core functionality to be framework-agnostic:
+  - Move all business logic into separate service classes
+  - Return structured responses with success/error messages and data
+  - Remove direct CLI interactions (print, input) from core functions
+  - Create separate handlers for CLI and web interfaces
+- Example structure:
+  ```python
+  class TagUpdaterService:
+      def update_tags(self, file_path: Path) -> dict:
+          return {
+              "success": bool,
+              "message": str,
+              "data": {
+                  "genres_updated": bool,
+                  "year_updated": bool,
+                  "cover_updated": bool,
+                  "file_renamed": bool,
+                  "new_path": str | None
+              }
+          }
+  ```
+- Benefits:
+  - Same core code can be used in CLI and web interface
+  - Better error handling and reporting
+  - Easier to test individual components
+  - Progress updates can be sent to web interface via WebSocket
+  - Configuration can be stored in database instead of files
