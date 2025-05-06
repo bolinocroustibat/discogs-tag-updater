@@ -16,6 +16,7 @@ from ytmusic.common import (
     Config as YTMusicConfig,
     setup_ytmusic,
     select_playlist as select_ytmusic_playlist,
+    get_ytmusic_track_ids,
 )
 
 spotify_config = SpotifyConfig()
@@ -101,17 +102,6 @@ def search_youtube_music(
             logger.error(f"Error searching YouTube Music: {e}")
             logger.error(f"Query was: {query}")
             return None
-
-
-def get_ytmusic_track_ids(ytm: YTMusic, ytmusic_playlist_id: str) -> set[str]:
-    """Get track IDs from YouTube Music playlist for duplicate checking"""
-    logger.info("Fetching existing tracks from YouTube Music playlist...")
-    existing_tracks: set[str] = set()
-    results = ytm.get_playlist(ytmusic_playlist_id)
-    for track in results["tracks"]:
-        if track.get("videoId"):
-            existing_tracks.add(track["videoId"])
-    return existing_tracks
 
 
 def add_track_to_ytmusic(
