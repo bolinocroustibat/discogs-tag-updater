@@ -193,7 +193,7 @@ def select_playlist(ytm: YTMusic, playlist_id: str | None = None) -> str:
     questions = [
         inquirer.List(
             "playlist_id",
-            message="Select a playlist",
+            message="Select a YouTube Music playlist",
             choices=choices,
             carousel=True,
         )
@@ -201,7 +201,7 @@ def select_playlist(ytm: YTMusic, playlist_id: str | None = None) -> str:
 
     answers = inquirer.prompt(questions)
     if not answers:  # User pressed Ctrl+C
-        raise KeyboardInterrupt("Playlist selection cancelled")
+        raise KeyboardInterrupt("YouTube Music playlist selection cancelled.")
 
     selected_id = answers["playlist_id"]
     selected_name = next(p["name"] for p in playlists if p["id"] == selected_id)

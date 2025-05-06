@@ -138,7 +138,7 @@ def select_playlist(sp: spotipy.Spotify, playlist_id: str | None = None) -> str:
     questions = [
         inquirer.List(
             "playlist_id",
-            message="Select a playlist",
+            message="Select a Spotify playlist",
             choices=choices,
             carousel=True,  # Show all options without scrolling
         )

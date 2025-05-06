@@ -35,4 +35,4 @@ if __name__ == "__main__":
         logger.error("Configuration file not found")
         sys.exit(1)
 
-    main()
+    main() 

@@ -94,7 +94,7 @@ def main() -> None:
     results = sp.playlist_items(spotify_playlist_id)
     while results:
         for item in results["items"]:
-            if not item["track"]:
+            if not item.get("track"):
                 continue
             track = item["track"]
             if not track.get("name") or not track.get("artists"):
@@ -128,13 +128,8 @@ def main() -> None:
 
     for index, track in enumerate(tracks, 1):
         logger.info(f"\nProcessing track {index}/{total_tracks}")
-        if not track.get("name") or not track.get("artists"):
-            logger.warning("Invalid track data - skipping")
-            tracks_skipped += 1
-            continue
-
         track_name = track["name"]
-        artist_name = track["artists"][0]["name"]
+        artist_name = track["artist"]
         video_id = search_youtube_music(ytm, track_name, artist_name)
 
         if video_id:
