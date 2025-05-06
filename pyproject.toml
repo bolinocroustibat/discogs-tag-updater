@@ -15,6 +15,7 @@ dependencies = [
     "requests<3.0.0,>=2.25.1",
     "spotipy>=2.23.0",
     "ytmusicapi>=0.23.0",
+    "tqdm>=4.66.0",
 ]
 requires-python = ">=3.7,<4.0"
 license = { text = "MIT" }

@@ -4,6 +4,7 @@ import time
 from typing import Optional
 
 from ytmusicapi import YTMusic
+from tqdm import tqdm
 
 from spotify.common import Config as SpotifyConfig, setup_spotify, logger, select_playlist as select_spotify_playlist
 from ytmusic.common import Config as YTMusicConfig, setup_ytmusic, select_playlist as select_ytmusic_playlist
@@ -114,6 +115,7 @@ def main() -> None:
     logger.info(f"Found {len(tracks)} tracks in Spotify playlist")
 
     # Get existing tracks in YouTube Music playlist
+    logger.info("Fetching existing tracks from YouTube Music playlist...")
     existing_tracks: set[str] = set()
     results = ytm.get_playlist(ytmusic_playlist_id)
     for track in results["tracks"]:
@@ -125,8 +127,8 @@ def main() -> None:
     tracks_added = 0
     tracks_skipped = 0
 
-    for index, track in enumerate(tracks, 1):
-        logger.info(f"\nProcessing track {index}/{total_tracks}")
+    logger.info("\nProcessing tracks...")
+    for track in tqdm(tracks, desc="Processing tracks", unit="track"):
         track_name = track["name"]
         artist_name = track["artist"]
         video_id = search_youtube_music(ytm, track_name, artist_name)

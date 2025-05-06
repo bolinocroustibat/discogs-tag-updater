@@ -7,6 +7,7 @@ import spotipy
 from mutagen.easyid3 import EasyID3
 from mutagen.flac import FLAC
 from mutagen.mp4 import MP4
+from tqdm import tqdm
 
 from spotify.common import Config, setup_spotify, logger, select_playlist
 
@@ -163,6 +164,7 @@ def main() -> None:
     tracks_skipped = 0
 
     # Get existing tracks in playlist
+    logger.info("Fetching existing tracks from playlist...")
     existing_tracks: set[str] = set()
     results = sp.playlist_items(playlist_id)
     while results:
@@ -175,8 +177,8 @@ def main() -> None:
             break
 
     # Process each music file
-    for index, music_file in enumerate(music_files, 1):
-        logger.info(f"\nProcessing local file {index}/{total_files}")
+    logger.info("\nProcessing files...")
+    for music_file in tqdm(music_files, desc="Processing files", unit="file"):
         matches = music_file.search_spotify(sp)
         if matches:
             track_id = music_file.select_match(sp, matches)

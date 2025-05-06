@@ -17,6 +17,7 @@ from mutagen.id3._frames import APIC
 from mutagen.mp3 import MP3, HeaderNotFoundError
 from mutagen.mp4 import MP4, MP4Cover, MP4StreamInfoError
 from mutagen._util import MutagenError
+from tqdm import tqdm
 
 from discogs.common import logger
 
@@ -356,13 +357,14 @@ def main(directory: Path, config=None, ds=None) -> None:
         for p in Path(directory).glob("**/*")
         if p.suffix in [".flac", ".mp3", ".m4a"]
     }
-    for tag_file in files:
+    
+    logger.info("\nProcessing files...")
+    for tag_file in tqdm(files, desc="Processing files", unit="file"):
         total += 1
         logger.log(
             "____________________________________________________________________\n"
             + f"File: {tag_file.filename}"
         )
-        # print(tag_file.tags_log)
 
         # Rename file
         new_filename_start: str = f"{tag_file.artist} - {tag_file.title}"
