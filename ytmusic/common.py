@@ -437,7 +437,9 @@ def search_ytmusic_tracks(
     return None
 
 
-def select_match(ytm: YTMusic, matches: list[dict], auto_first: bool = False) -> str | None:
+def select_match(
+    ytm: YTMusic, matches: list[dict], auto_first: bool = False
+) -> str | None:
     """Let user select a match from the list of potential matches
 
     Args:
@@ -459,12 +461,16 @@ def select_match(ytm: YTMusic, matches: list[dict], auto_first: bool = False) ->
         choice = "1"
     else:
         choice = (
-            input("\nSelect match number (1 is default, 's' to skip, 'a' for auto-first): ")
+            input(
+                "\nSelect match number (1 is default, 's' to skip, 'a' for auto-first): "
+            )
             .strip()
             .lower()
         )
         if choice == "a":
-            logger.info("Auto-first mode enabled - will select first match for all remaining tracks")
+            logger.info(
+                "Auto-first mode enabled - will select first match for all remaining tracks"
+            )
             return select_match(ytm, matches, auto_first=True)
 
     if choice == "s":

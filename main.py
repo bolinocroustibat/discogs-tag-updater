@@ -224,7 +224,13 @@ def main() -> None:
     action = answers["action"]
 
     # Check media path for features that need it
-    if action in ["discogs_update", "discogs_rename", "discogs_both", "spotify_add", "ytmusic_add"]:
+    if action in [
+        "discogs_update",
+        "discogs_rename",
+        "discogs_both",
+        "spotify_add",
+        "ytmusic_add",
+    ]:
         if not discogs_config.media_path:
             media_path = setup_media_path()
         else:
