@@ -408,4 +408,4 @@ def main(directory: Path, config=None, ds=None) -> None:
     logger.success(f"With Discogs info found: {found}")
     logger.error(f"With Discogs info not found: {not_found}")
     logger.warning(f"Renamed: {renamed}\n")
-    input("Press Enter to exit...") 
+    input("Press Enter to exit...")

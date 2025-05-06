@@ -3,7 +3,6 @@ from pathlib import Path
 import time
 from typing import Optional
 
-import spotipy
 from ytmusicapi import YTMusic
 
 from spotify.common import Config as SpotifyConfig, setup_spotify, logger, select_playlist as select_spotify_playlist

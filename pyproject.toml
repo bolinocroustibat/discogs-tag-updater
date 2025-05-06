@@ -21,7 +21,7 @@ license = { text = "MIT" }
 
 [tool]
 rye = { dev-dependencies = [
-    "ruff>=0.2.2",
+    "ruff>=0.11.8",
 ] }
 
 [build-system]

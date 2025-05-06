@@ -120,9 +120,13 @@ def select_playlist(sp: spotipy.Spotify, playlist_id: str | None = None) -> str:
         try:
             if playlist_id == "liked":
                 # Special case for Liked Songs
-                liked_tracks = sp.current_user_saved_tracks()
-                logger.success('Using Spotify playlist: "Liked Songs"')
-                return playlist_id
+                try:
+                    sp.current_user_saved_tracks(limit=1)  # Just check if we can access liked tracks
+                    logger.success('Using Spotify playlist: "Liked Songs"')
+                    return playlist_id
+                except Exception as e:
+                    logger.error(f"Error accessing liked songs: {e}")
+                    # Fall through to manual selection
             else:
                 playlist = sp.playlist(playlist_id)
                 logger.success(f'Using Spotify playlist: "{playlist["name"]}"')
