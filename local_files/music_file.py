@@ -5,7 +5,7 @@ from mutagen.mp4 import MP4
 
 from logger import FileLogger
 
-logger = FileLogger("discogs/discogs.log")
+logger = FileLogger("local_files/discogs.log")
 
 
 class MusicFile:

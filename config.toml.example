@@ -1,4 +1,5 @@
-[common]
+[local_files]
+# Path to your music files directory
 path = "/your/music/path/"
 
 [discogs]

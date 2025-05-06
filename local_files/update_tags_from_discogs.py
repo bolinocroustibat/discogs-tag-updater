@@ -17,7 +17,7 @@ from mutagen.mp4 import MP4, MP4Cover, MP4StreamInfoError
 from mutagen._util import MutagenError
 from tqdm import tqdm
 
-from discogs.common import logger
+from local_files.common import logger
 
 
 class DTag:

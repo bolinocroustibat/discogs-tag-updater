@@ -7,7 +7,7 @@ from mutagen.mp3 import MP3
 from mutagen.id3._util import ID3NoHeaderError
 
 TOML_PATH = Path("config.toml")
-logger = FileLogger(str(Path("discogs") / "discogs.log"))
+logger = FileLogger(str(Path("local_files") / "local_files.log"))
 
 
 class Config:
@@ -15,10 +15,10 @@ class Config:
         with open(TOML_PATH, "rb") as f:
             config = tomllib.load(f)
 
-        # Get media path from common section, default to None if not found
+        # Get media path from local_files section, default to None if not found
         self.media_path = None
-        if "common" in config and "path" in config["common"]:
-            raw_path = config["common"]["path"].replace("\\", "")
+        if "local_files" in config and "path" in config["local_files"]:
+            raw_path = config["local_files"]["path"].replace("\\", "")
             self.media_path = Path(raw_path)
 
         # Discogs config

@@ -12,7 +12,7 @@ from spotify.common import (
     search_spotify,
     select_match,
 )
-from discogs.music_file import MusicFile
+from local_files.music_file import MusicFile
 
 config = Config()
 

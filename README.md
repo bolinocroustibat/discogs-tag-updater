@@ -4,7 +4,7 @@ A CLI toolbox for syncing your music across Spotify, YouTube Music and you local
 - Bidirectional playlist synchronization between Spotify and YouTube Music
 - Automatic duplicate detection and removal in Spotify and YouTube Music playlists
 - Seamless import of local music files into Spotify playlists
-- Automatic metadata enrichment and file organization using Discogs database
+- Metadata enrichment and music files management using Discogs database
 
 ## Prerequisites
 
@@ -33,20 +33,20 @@ On the first run, it will ask for some inputs. You can change these variables af
 ### Common Setup
 `path`  
 The path to your music files directory. This is only required for:
-- Discogs tag updates
-- File renaming
+- Local file tag updates from Discogs
+- File renaming based on tags
 - Adding local files to Spotify playlist
 
-### Discogs (💿) Setup
+### Local Files Setup
 For the discogs access token, you can create one [here](https://www.discogs.com/settings/developers).
 
-### Spotify (🟢) Setup
+### Spotify Setup
 1. Create an application in your [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
 2. Get your `client_id` and `client_secret` from the application settings
 3. Add `http://localhost:8888/callback` to the Redirect URIs in your application settings
 4. Get your target playlist ID (the last part of the playlist URL: spotify:playlist:**YOUR_PLAYLIST_ID**)
 
-### YouTube Music (🔴) Setup
+### YouTube Music Setup
 You can choose between two authentication methods:
 
 1. OAuth (Recommended):
@@ -66,7 +66,7 @@ You can choose between two authentication methods:
 `path`  
 The path to your music files directory. Only required for features that work with local files.
 
-### Discogs (💿) Options
+### Local Files (💿) Options
 `token`  
 Your Discogs API token.
 
@@ -117,7 +117,7 @@ The ID of the playlist where you want to add tracks. If not set, you'll be promp
 
 ### Common Improvements
 - Ask user for local path if not provided in `config.toml` for:
-  - Discogs (💿) tag updater
+  - Local file tag updates from Discogs
   - Spotify (🟢) utilities
   - YouTube Music (🔴) utilities
 

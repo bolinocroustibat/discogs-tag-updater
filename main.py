@@ -4,9 +4,9 @@ import inquirer
 import tomllib
 import discogs_client as dc
 
-from discogs.common import Config as DiscogsConfig, logger as discogs_logger
-from discogs.update_tags import main as update_tags_main
-from discogs.rename_from_tags import main as rename_files_main
+from local_files.common import Config as DiscogsConfig, logger as discogs_logger
+from local_files.update_tags_from_discogs import main as update_tags_main
+from local_files.rename_from_tags import main as rename_files_main
 
 from spotify.common import Config as SpotifyConfig
 from spotify.add_local_tracks import main as add_tracks_main
@@ -123,15 +123,15 @@ def setup_media_path() -> Path:
     with open(CONFIG_PATH, "rb") as f:
         config = tomllib.load(f)
 
-    # Update only the path in the common section
-    if "common" not in config:
-        config["common"] = {}
-    config["common"]["path"] = answers["media_path"]
+    # Update only the path in the local_files section
+    if "local_files" not in config:
+        config["local_files"] = {}
+    config["local_files"]["path"] = answers["media_path"]
 
     # Write back the updated config
     with open(CONFIG_PATH, "w") as f:
-        f.write("[common]\n")
-        f.write(f'path = "{config["common"]["path"]}"\n\n')
+        f.write("[local_files]\n")
+        f.write(f'path = "{config["local_files"]["path"]}"\n\n')
 
         # Write discogs section
         if "discogs" in config:

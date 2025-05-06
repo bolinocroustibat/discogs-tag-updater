@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 import inquirer
 
-from discogs.common import logger, get_audio_files, get_track_info
+from local_files.common import logger, get_audio_files, get_track_info
 
 
 def sanitize_filename(filename: str) -> str:
@@ -72,7 +72,7 @@ def main() -> None:
     try:
         with open(config_path, "rb") as f:
             config = tomllib.load(f)
-            media_path = Path(config["common"]["path"].replace("\\", ""))
+            media_path = Path(config["local_files"]["path"].replace("\\", ""))
     except Exception as e:
         logger.error(f"Error reading config: {e}")
         sys.exit(1)
