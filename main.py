@@ -118,21 +118,21 @@ def setup_media_path() -> Path:
     if not answers:
         discogs_logger.error("Configuration cancelled by user")
         sys.exit(1)
-    
+
     # Read existing config
     with open(CONFIG_PATH, "rb") as f:
         config = tomllib.load(f)
-    
+
     # Update only the path in the common section
     if "common" not in config:
         config["common"] = {}
     config["common"]["path"] = answers["media_path"]
-    
+
     # Write back the updated config
     with open(CONFIG_PATH, "w") as f:
         f.write("[common]\n")
         f.write(f'path = "{config["common"]["path"]}"\n\n')
-        
+
         # Write discogs section
         if "discogs" in config:
             f.write("[discogs]\n")
@@ -142,20 +142,20 @@ def setup_media_path() -> Path:
                 else:
                     f.write(f'{key} = "{value}"\n')
             f.write("\n")
-        
+
         # Write spotify section
         if "spotify" in config:
             f.write("[spotify]\n")
             for key, value in config["spotify"].items():
                 f.write(f'{key} = "{value}"\n')
             f.write("\n")
-        
+
         # Write ytmusic section
         if "ytmusic" in config:
             f.write("[ytmusic]\n")
             for key, value in config["ytmusic"].items():
                 f.write(f'{key} = "{value}"\n')
-    
+
     return Path(answers["media_path"])
 
 
@@ -217,7 +217,7 @@ def main() -> None:
 
     # Execute selected action
     action = answers["action"]
-    
+
     # Check media path for features that need it
     if action in ["discogs_update", "discogs_rename", "discogs_both", "spotify_add"]:
         if not discogs_config.media_path:

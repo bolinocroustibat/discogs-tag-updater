@@ -286,13 +286,13 @@ def search_spotify(
     sp: spotipy.Spotify, track_name: str, artist_name: str, file_name: str | None = None
 ) -> list[dict] | None:
     """Search for track on Spotify and return list of potential matches
-    
+
     Args:
         sp: Spotify client
         track_name: Name of the track
         artist_name: Name of the artist
         file_name: Optional name of the local file (for logging purposes)
-        
+
     Returns:
         list[dict] | None: List of potential matches with id, name, and artist, or None if no matches
     """
@@ -344,11 +344,11 @@ def search_spotify(
 
 def select_match(sp: spotipy.Spotify, matches: list[dict]) -> str | None:
     """Let user select a match from the list of potential matches
-    
+
     Args:
         sp: Spotify client
         matches: List of potential matches with id, name, and artist
-        
+
     Returns:
         str | None: Selected track ID or None if skipped/invalid
     """

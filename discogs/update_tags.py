@@ -285,7 +285,9 @@ class DTag:
             if retry == 0:
                 logger.error(f"Too many API calls, skipping {self}")
                 return False
-            logger.error(f"Too many API calls. {retry} retries left, next retry in 5 sec.")
+            logger.error(
+                f"Too many API calls. {retry} retries left, next retry in 5 sec."
+            )
             time.sleep(5)
             self.search(retry=retry)
 

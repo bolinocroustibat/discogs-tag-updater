@@ -4,7 +4,14 @@ import time
 
 from tqdm import tqdm
 
-from spotify.common import Config, setup_spotify, logger, select_playlist, search_spotify, select_match
+from spotify.common import (
+    Config,
+    setup_spotify,
+    logger,
+    select_playlist,
+    search_spotify,
+    select_match,
+)
 from discogs.music_file import MusicFile
 
 config = Config()
@@ -56,7 +63,9 @@ def main() -> None:
     # Process each music file
     logger.info("\nProcessing files...")
     for music_file in tqdm(music_files, desc="Processing files", unit="file"):
-        matches = search_spotify(sp, music_file.title, music_file.artist, music_file.path.name)
+        matches = search_spotify(
+            sp, music_file.title, music_file.artist, music_file.path.name
+        )
         if matches:
             track_id = select_match(sp, matches)
             if track_id:

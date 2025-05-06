@@ -154,7 +154,7 @@ def list_user_playlists(ytm: YTMusic) -> list[PlaylistInfo]:
             if playlist["playlistId"] == "LM":
                 # Special case for Liked Music
                 try:
-                    liked_tracks = ytm.get_liked_songs()
+                    ytm.get_liked_songs()
                 except Exception as e:
                     logger.warning(f"Could not get liked songs count: {e}")
                 liked_music = {
@@ -204,7 +204,7 @@ def select_playlist(ytm: YTMusic, playlist_id: str | None = None) -> str:
             if playlist_id == "LM":
                 # Special case for Liked Music
                 try:
-                    liked_tracks = ytm.get_liked_songs()
+                    ytm.get_liked_songs()
                 except Exception as e:
                     logger.warning(f"Could not get liked songs count: {e}")
                 logger.success('Using YouTube Music playlist "Liked Music"')
@@ -246,7 +246,7 @@ def select_playlist(ytm: YTMusic, playlist_id: str | None = None) -> str:
             raise KeyboardInterrupt("YouTube Music playlist selection cancelled.")
 
         selected_id = answers["playlist_id"]
-        
+
         if selected_id == "new":
             # Prompt for new playlist details
             questions = [
@@ -263,16 +263,18 @@ def select_playlist(ytm: YTMusic, playlist_id: str | None = None) -> str:
             answers = inquirer.prompt(questions)
             if not answers:  # User pressed Ctrl+C
                 continue  # Go back to playlist selection
-            
+
             try:
                 # Create new playlist
-                playlist_id = create_playlist(ytm, answers["name"], answers["description"])
+                playlist_id = create_playlist(
+                    ytm, answers["name"], answers["description"]
+                )
                 logger.success(f'Created and selected new playlist "{answers["name"]}"')
                 return playlist_id
             except Exception as e:
                 logger.error(f"Failed to create playlist: {e}")
                 continue  # Go back to playlist selection
-        
+
         # For existing playlist selection
         selected_name = next(p["name"] for p in playlists if p["id"] == selected_id)
         logger.success(f'Using YouTube Music playlist "{selected_name}"')
@@ -335,15 +337,15 @@ def get_ytmusic_track_ids(ytm: YTMusic, ytmusic_playlist_id: str) -> set[str]:
 
 def create_playlist(ytm: YTMusic, name: str, description: str = "") -> str:
     """Create a new YouTube Music playlist
-    
+
     Args:
         ytm: YouTube Music client
         name: Name of the playlist
         description: Optional description for the playlist
-        
+
     Returns:
         str: ID of the created playlist
-        
+
     Raises:
         Exception: If playlist creation fails
     """
