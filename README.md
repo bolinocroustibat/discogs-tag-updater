@@ -2,9 +2,12 @@
 
 ## Prerequisites
 
-- Requires Python >=3.7 and a modern Python environement manager like [Poetry](https://python-poetry.org/) or [PDM](https://pdm.fming.dev/).
+- Requires Python >=3.10 and [uv](https://docs.astral.sh/uv/getting-started/installation/).
 - For the Discogs tag updater, it requires a Discogs developper account and free API key: [https://www.discogs.com/settings/developers](https://www.discogs.com/settings/developers)
 - For Spotify integration: requires a Spotify Developer account: [https://developer.spotify.com/dashboard](https://developer.spotify.com/dashboard)
+- For YouTube Music integration: it requires either:
+  - A YouTube Music Developer account: [https://console.cloud.google.com/apis/api/youtube.googleapis.com/credentials](https://console.cloud.google.com/apis/api/youtube.googleapis.com/credentials)
+  - Or a YouTube Music session cookie file (see [https://ytmusicapi.readthedocs.io/en/stable/setup/browser.html](https://ytmusicapi.readthedocs.io/en/stable/setup/browser.html))
 
 ## Install
 ```sh
@@ -27,25 +30,46 @@ For the discogs access token, you can create one [here](https://www.discogs.com/
 3. Add `http://localhost:8888/callback` to the Redirect URIs in your application settings
 4. Get your target playlist ID (the last part of the playlist URL: spotify:playlist:**YOUR_PLAYLIST_ID**)
 
+### YouTube Music Setup
+You can choose between two authentication methods:
+
+1. OAuth (Recommended):
+   - Create a project in [Google Cloud Console](https://console.cloud.google.com)
+   - Enable the YouTube Data API v3
+   - Create OAuth 2.0 credentials (TVs and Limited Input devices type)
+   - Add your credentials to `config.ini`
+   - Run `uv run ytmusicapi oauth` to create `oauth.json`
+
+2. Browser Cookies:
+   - Follow the instructions at [ytmusicapi browser setup](https://ytmusicapi.readthedocs.io/en/stable/setup/browser.html)
+   - Create a `browser.json` file with your browser credentials
+
 ## Options
 
+### Common Options
+`path`  
+The path to your music files directory.
+
 ### Discogs Options
+`token`  
+Your Discogs API token.
+
 `overwrite_year = False`  
 If year tag is set on the file, it will not overwrite it.  
 If year tag is empty, it will add it.
 
-`overwrite_genre = False`  
+`overwrite_genre = False`
 If genre tag is set on the file, it will not overwrite it.  
 If genre tag is empty, it will add it.  
 
-`embed_cover = True`  
+`embed_cover = True`
 Enable or disable cover embedding feature. Will overwrite existing covers.
 
-`overwrite_cover = False`   
+`overwrite_cover = False`
 If cover is set on the file, it will not overwrite it.  
 If cover is empty, it will add it.
 
-`rename_file = True`   
+`rename_file = False`
 If file is already named correctly, it will not rename it.
 If artist and/or title is empty, it will not rename it.
 Otherwise, it will rename it to `artist - title.ext`.
@@ -57,11 +81,21 @@ Your Spotify application client ID.
 `client_secret`  
 Your Spotify application client secret.
 
-`playlist_id`  
-The ID of the playlist where you want to add tracks.
-
 `redirect_uri`  
 The redirect URI for OAuth authentication (default: http://localhost:8888/callback).
+
+`playlist_id`  
+The ID of the playlist where you want to add tracks. If not set, you'll be prompted to select a playlist when running the script.
+
+### YouTube Music Options
+`client_id`  
+Your YouTube Music OAuth client ID (only needed for OAuth method).
+
+`client_secret`  
+Your YouTube Music OAuth client secret (only needed for OAuth method).
+
+`playlist_id`  
+The ID of the playlist where you want to add tracks. If not set, you'll be prompted to select a playlist when running the script.
 
 ## Scripts
 
@@ -90,18 +124,26 @@ The first time you run the Spotify script, it will:
 3. Request permission to modify your playlists
 4. Save the authentication token locally for future use
 
+#### How to run
+
+```sh
+uv run spotify
+```
+
+This will show a menu with the following options:
+- Add local files to Spotify playlist
+- Find and remove duplicate tracks in Spotify playlist
+
+### YouTube Music utilities
+
+#### How to run
+
+```sh
+uv run ytmusic
+```
+
+This will show a menu with the following options:
+- Import tracks from Spotify playlist
+- Find and remove duplicate tracks in YouTube Music playlist
+
 For each track found, you'll be prompted to confirm whether you want to add it to your playlist.
-
-#### Add tracks to Spotify
-
-Searches for your music files on Spotify and adds them to a playlist:
-```sh
-uv run spotify/add_tracks.py
-```
-
-### Spotify Duplicate Manager
-
-Manages duplicates in your Spotify playlist.
-```sh
-uv run spotify/manage_duplicates.py
-```

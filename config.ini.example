@@ -1,17 +1,25 @@
+[common]
+path = /your/music/path/
+
 [discogs]
 token = your_token
-path = /your/mp3/path/
 overwrite_year = True
 overwrite_genre = True
 embed_cover = True
 overwrite_cover = True
-rename_file = True
+rename_file = False
 
 [spotify]
+; OAuth credentials from Spotify Developer Dashboard
 client_id = your_client_id
 client_secret = your_client_secret
 redirect_uri = http://localhost:8888/callback
-playlist_id = your_playlist_id
+; Optional: if not set, you'll be prompted to select a playlist
+; playlist_id = your_playlist_id
 
 [ytmusic]
-playlist_id = your_playlist_id
+; OAuth credentials from Google Cloud Console (TVs and Limited Input devices type)
+client_id = your_client_id
+client_secret = your_client_secretw
+; Optional: if not set, you'll be prompted to select a playlist
+; playlist_id = your_playlist_id
