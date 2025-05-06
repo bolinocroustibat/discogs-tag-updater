@@ -15,7 +15,7 @@ from ytmusic.common import (
     Config as YTMusicConfig,
     setup_ytmusic,
     select_playlist as select_ytmusic_playlist,
-    get_ytmusic_tracks,
+    get_ytmusic_track_details,
 )
 
 spotify_config = SpotifyConfig()
@@ -103,10 +103,10 @@ def select_match(sp: spotipy.Spotify, matches: list[dict]) -> str | None:
     return None
 
 
-def get_existing_spotify_tracks(
+def get_spotify_track_ids(
     sp: spotipy.Spotify, spotify_playlist_id: str
 ) -> set[str]:
-    """Get existing tracks in Spotify playlist"""
+    """Get track IDs from Spotify playlist for duplicate checking"""
     logger.info("Fetching existing tracks from Spotify playlist...")
     existing_tracks: set[str] = set()
     try:
@@ -335,10 +335,10 @@ def main() -> None:
     spotify_playlist_id = select_spotify_playlist(sp, spotify_config.playlist_id)
 
     # Get tracks from YouTube Music playlist
-    tracks = get_ytmusic_tracks(ytm, ytmusic_playlist_id)
+    tracks = get_ytmusic_track_details(ytm, ytmusic_playlist_id)
 
     # Get existing tracks in Spotify playlist
-    existing_tracks = get_existing_spotify_tracks(sp, spotify_playlist_id)
+    existing_tracks = get_spotify_track_ids(sp, spotify_playlist_id)
 
     # Process tracks
     tracks_added, tracks_skipped = process_tracks(

@@ -237,8 +237,8 @@ def select_playlist(ytm: YTMusic, playlist_id: str | None = None) -> str:
     return selected_id
 
 
-def get_ytmusic_tracks(ytm: YTMusic, ytmusic_playlist_id: str) -> list[dict]:
-    """Get tracks from YouTube Music playlist"""
+def get_ytmusic_track_details(ytm: YTMusic, ytmusic_playlist_id: str) -> list[dict]:
+    """Get track details (name, artist) from YouTube Music playlist for searching"""
     logger.info(
         f'Fetching tracks from YouTube Music playlist "{ytmusic_playlist_id}"...'
     )

@@ -186,8 +186,8 @@ def select_playlist(sp: spotipy.Spotify, playlist_id: str | None = None) -> str:
     return selected_id
 
 
-def get_spotify_tracks(sp: spotipy.Spotify, spotify_playlist_id: str) -> list[dict]:
-    """Get tracks from Spotify playlist"""
+def get_spotify_track_details(sp: spotipy.Spotify, spotify_playlist_id: str) -> list[dict]:
+    """Get track details (name, artist) from Spotify playlist for searching"""
     logger.info(f'Fetching tracks from Spotify playlist "{spotify_playlist_id}"...')
     tracks: list[dict] = []
     try:
