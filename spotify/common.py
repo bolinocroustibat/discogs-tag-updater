@@ -1,14 +1,13 @@
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-from configparser import ConfigParser
 from pathlib import Path
 import inquirer
 from typing import TypedDict
+import tomllib
 
 from logger import FileLogger
 
-INI_PATH = "config.ini"
-parser = ConfigParser()
+TOML_PATH = "config.toml"
 logger = FileLogger("spotify.log")
 
 
@@ -20,24 +19,33 @@ class PlaylistInfo(TypedDict):
 
 class Config:
     def __init__(self) -> None:
-        global parser
-        parser.read(INI_PATH)
+        with open(TOML_PATH, "rb") as f:
+            config = tomllib.load(f)
+        
         # Remove escape characters from the path and convert to Path object
-        raw_path = parser.get("common", "path").replace("\\", "")
+        raw_path = config["common"]["path"].replace("\\", "")
         self.media_path = Path(raw_path)
+        
         # Spotify config
-        self.client_id = parser.get("spotify", "client_id")
-        self.client_secret = parser.get("spotify", "client_secret")
-        self.redirect_uri = parser.get("spotify", "redirect_uri")
+        spotify_config = config["spotify"]
+        self.client_id = spotify_config["client_id"]
+        self.client_secret = spotify_config["client_secret"]
+        self.redirect_uri = spotify_config["redirect_uri"]
         # Try to get playlist_id, None if not set
-        self.playlist_id = parser.get("spotify", "playlist_id", fallback=None)
+        self.playlist_id = spotify_config.get("playlist_id")
 
     @staticmethod
-    def write() -> None:
-        """write ini file, with current vars"""
-        global parser
-        with open(INI_PATH, "w") as f:
-            parser.write(f)
+    def write(config_data: dict) -> None:
+        """write toml file with current vars"""
+        with open(TOML_PATH, "w") as f:
+            f.write("[common]\n")
+            f.write(f'path = "{config_data["media_path"]}"\n\n')
+            f.write("[spotify]\n")
+            f.write(f'client_id = "{config_data["client_id"]}"\n')
+            f.write(f'client_secret = "{config_data["client_secret"]}"\n')
+            f.write(f'redirect_uri = "{config_data["redirect_uri"]}"\n')
+            if config_data.get("playlist_id"):
+                f.write(f'playlist_id = "{config_data["playlist_id"]}"\n')
 
 
 def setup_spotify() -> spotipy.Spotify:

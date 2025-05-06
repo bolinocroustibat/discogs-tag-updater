@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Requires Python >=3.10 and [uv](https://docs.astral.sh/uv/getting-started/installation/).
+- Requires Python >=3.11 and [uv](https://docs.astral.sh/uv/getting-started/installation/).
 - For the Discogs tag updater, it requires a Discogs developper account and free API key: [https://www.discogs.com/settings/developers](https://www.discogs.com/settings/developers)
 - For Spotify integration: requires a Spotify Developer account: [https://developer.spotify.com/dashboard](https://developer.spotify.com/dashboard)
 - For YouTube Music integration: it requires either:
@@ -15,7 +15,7 @@ uv sync
 ```
 
 ## Config
-On the first run, it will ask for some inputs. You can change these variables after in the `config.ini` file, following the `config.ini.example` file.
+On the first run, it will ask for some inputs. You can change these variables after in the `config.toml` file, following the `config.toml.example` file.
 
 ### Common Setup
 `path`  
@@ -37,7 +37,7 @@ You can choose between two authentication methods:
    - Create a project in [Google Cloud Console](https://console.cloud.google.com)
    - Enable the YouTube Data API v3
    - Create OAuth 2.0 credentials (TVs and Limited Input devices type)
-   - Add your credentials to `config.ini`
+   - Add your credentials to `config.toml`
    - Run `uv run ytmusicapi oauth` to create `oauth.json`
 
 2. Browser Cookies:
@@ -54,22 +54,22 @@ The path to your music files directory.
 `token`  
 Your Discogs API token.
 
-`overwrite_year = False`  
+`overwrite_year = false`
 If year tag is set on the file, it will not overwrite it.  
 If year tag is empty, it will add it.
 
-`overwrite_genre = False`
+`overwrite_genre = false`
 If genre tag is set on the file, it will not overwrite it.  
 If genre tag is empty, it will add it.  
 
-`embed_cover = True`
+`embed_cover = true`
 Enable or disable cover embedding feature. Will overwrite existing covers.
 
-`overwrite_cover = False`
+`overwrite_cover = false`
 If cover is set on the file, it will not overwrite it.  
 If cover is empty, it will add it.
 
-`rename_file = False`
+`rename_file = false`
 If file is already named correctly, it will not rename it.
 If artist and/or title is empty, it will not rename it.
 Otherwise, it will rename it to `artist - title.ext`.

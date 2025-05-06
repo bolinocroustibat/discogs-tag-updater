@@ -3,7 +3,6 @@ import os
 import re
 import sys
 import time
-from configparser import ConfigParser
 from pathlib import Path
 from typing import Optional
 
@@ -21,10 +20,10 @@ from mutagen.mp4 import MP4, MP4Cover, MP4StreamInfoError
 from mutagen._util import MutagenError
 from logger import FileLogger
 import inquirer
+import tomllib
 
 TOKEN_PATH = "discogs-token"
-INI_PATH = "config.ini"
-parser = ConfigParser()
+TOML_PATH = "config.toml"
 
 # colorama
 init(autoreset=True)
@@ -34,22 +33,35 @@ logger = FileLogger("discogs.log")
 
 class Config(object):
     def __init__(self) -> None:
-        parser.read(INI_PATH)
+        with open(TOML_PATH, "rb") as f:
+            config = tomllib.load(f)
+        
         # Remove escape characters from the path and convert to Path object
-        raw_path = parser.get("common", "path").replace("\\", "")
+        raw_path = config["common"]["path"].replace("\\", "")
         self.media_path = Path(raw_path)
-        self.token = parser.get("discogs", "token")
-        self.overwrite_year = parser.getboolean("discogs", "overwrite_year")
-        self.overwrite_genre = parser.getboolean("discogs", "overwrite_genre")
-        self.embed_cover = parser.getboolean("discogs", "embed_cover")
-        self.overwrite_cover = parser.getboolean("discogs", "overwrite_cover")
-        self.rename_file = parser.getboolean("discogs", "rename_file")
+        
+        # Discogs config
+        discogs_config = config["discogs"]
+        self.token = discogs_config["token"]
+        self.overwrite_year = discogs_config["overwrite_year"]
+        self.overwrite_genre = discogs_config["overwrite_genre"]
+        self.embed_cover = discogs_config["embed_cover"]
+        self.overwrite_cover = discogs_config["overwrite_cover"]
+        self.rename_file = discogs_config["rename_file"]
 
     @staticmethod
-    def write() -> None:
-        """write ini file, with current vars"""
-        with open(INI_PATH, "w") as f:
-            parser.write(f)
+    def write(config_data: dict) -> None:
+        """write toml file with current vars"""
+        with open(TOML_PATH, "w") as f:
+            f.write("[common]\n")
+            f.write(f'path = "{config_data["media_path"]}"\n\n')
+            f.write("[discogs]\n")
+            f.write(f'token = "{config_data["token"]}"\n')
+            f.write(f"overwrite_year = {str(config_data['overwrite_year']).lower()}\n")
+            f.write(f"overwrite_genre = {str(config_data['overwrite_genre']).lower()}\n")
+            f.write(f"embed_cover = {str(config_data['embed_cover']).lower()}\n")
+            f.write(f"overwrite_cover = {str(config_data['overwrite_cover']).lower()}\n")
+            f.write(f"rename_file = {str(config_data['rename_file']).lower()}\n")
 
 
 class DTag(object):
@@ -439,7 +451,7 @@ def main(directory: Path) -> None:
 
 if __name__ == "__main__":
     # read config
-    if Path(INI_PATH).is_file() is False:
+    if Path(TOML_PATH).is_file() is False:
         print("\n\n\n")
         print(Fore.GREEN + "First run, config file will be created.")
 
@@ -470,22 +482,15 @@ if __name__ == "__main__":
         ]
 
         answers = inquirer.prompt(questions)
+        if not answers:  # User pressed Ctrl+C
+            raise KeyboardInterrupt("Configuration cancelled")
 
         # Handle macOS path
         if os.name == "posix":
             answers["media_path"] = answers["media_path"].replace("\\", "")
 
         # write config file
-        with open(INI_PATH, "w") as f:
-            f.write("[common]\n")
-            f.write(f"path = {answers['media_path']}\n\n")
-            f.write("[discogs]\n")
-            f.write(f"token = {answers['token']}\n")
-            f.write(f"overwrite_year = {answers['overwrite_year']}\n")
-            f.write(f"overwrite_genre = {answers['overwrite_genre']}\n")
-            f.write(f"embed_cover = {answers['embed_cover']}\n")
-            f.write(f"overwrite_cover = {answers['overwrite_cover']}\n")
-            f.write(f"rename_file = {answers['rename_file']}\n")
+        Config.write(answers)
 
     # config file exists now
     config = Config()

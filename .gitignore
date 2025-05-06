@@ -184,7 +184,7 @@ flac/
 *.flac
 *.mp3
 discogs-token
-config.ini
+config.toml
 *.log
 
 # Authentication files
