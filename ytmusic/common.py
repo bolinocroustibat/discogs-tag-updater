@@ -163,7 +163,6 @@ def list_user_playlists(ytm: YTMusic) -> list[PlaylistInfo]:
                     "id": playlist["playlistId"],
                     "track_count": 0,
                 }
-                logger.success('Using YouTube Music playlist "Liked Music"')
                 continue
             else:
                 # Regular playlist

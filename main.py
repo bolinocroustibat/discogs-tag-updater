@@ -192,10 +192,6 @@ def main() -> None:
                     "spotify_add",
                 ),
                 (
-                    "🔴  ➕  Add local files to YouTube Music playlist",
-                    "ytmusic_add",
-                ),
-                (
                     "🔴  ➡️  🟢  Import tracks from YouTube Music playlist to Spotify Playlist",
                     "spotify_import",
                 ),
@@ -204,6 +200,10 @@ def main() -> None:
                     "spotify_duplicates",
                 ),
                 # YouTube Music options
+                (
+                    "🔴  ➕  Add local files to YouTube Music playlist",
+                    "ytmusic_add",
+                ),
                 (
                     "🟢  ➡️  🔴  Import tracks from Spotify playlist to YouTube Music Playlist",
                     "ytmusic_import",
