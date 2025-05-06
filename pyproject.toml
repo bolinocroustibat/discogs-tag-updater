@@ -1,7 +1,7 @@
 [project]
 name = "music-sync-toolbox"
 version = "2.1.0"
-description = "A CLI toolbox for syncing your music across Spotify, YouTube Music and you local music files."
+description = "A CLI toolbox for syncing your music across Spotify, YouTube Music and local music files, using Discogs as a source of truth."
 authors = [
     { name = "Aesir" },
     { name = "bolinocroustibat", email = "me@adriencarpentier.com" },

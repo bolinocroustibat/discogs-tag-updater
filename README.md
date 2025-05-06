@@ -1,10 +1,11 @@
 # Music Sync Toolbox
 
-A CLI toolbox for syncing your music across Spotify, YouTube Music and you local music files. Features include:
+A CLI toolbox for syncing your music across Spotify, YouTube Music and local music files, using Discogs as a source of truth.
+Features include:
+- Metadata enrichment and local music files management using Discogs database
 - Bidirectional playlist synchronization between Spotify and YouTube Music
 - Automatic duplicate detection and removal in Spotify and YouTube Music playlists
 - Import of local music files into Spotify and YouTube Music playlists
-- Metadata enrichment and local music files management using Discogs database
 
 ## Prerequisites
 
