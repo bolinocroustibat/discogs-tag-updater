@@ -16,6 +16,7 @@ from spotify.import_from_ytmusic import main as import_from_ytmusic_main
 from ytmusic.common import Config as YTMusicConfig
 from ytmusic.import_from_spotify import main as import_from_spotify_main
 from ytmusic.manage_duplicates import main as manage_ytmusic_duplicates_main
+from ytmusic.add_local_tracks import main as add_ytmusic_tracks_main
 
 CONFIG_PATH = Path("config.toml")
 
@@ -191,6 +192,10 @@ def main() -> None:
                     "spotify_add",
                 ),
                 (
+                    "🔴  ➕  Add local files to YouTube Music playlist",
+                    "ytmusic_add",
+                ),
+                (
                     "🔴  ➡️  🟢  Import tracks from YouTube Music playlist to Spotify Playlist",
                     "spotify_import",
                 ),
@@ -219,7 +224,7 @@ def main() -> None:
     action = answers["action"]
 
     # Check media path for features that need it
-    if action in ["discogs_update", "discogs_rename", "discogs_both", "spotify_add"]:
+    if action in ["discogs_update", "discogs_rename", "discogs_both", "spotify_add", "ytmusic_add"]:
         if not discogs_config.media_path:
             media_path = setup_media_path()
         else:
@@ -237,6 +242,8 @@ def main() -> None:
         rename_files_main()
     elif action == "spotify_add":
         add_tracks_main()
+    elif action == "ytmusic_add":
+        add_ytmusic_tracks_main()
     elif action == "spotify_import":
         import_from_ytmusic_main()
     elif action == "spotify_duplicates":

@@ -17,91 +17,12 @@ from ytmusic.common import (
     setup_ytmusic,
     select_playlist as select_ytmusic_playlist,
     get_ytmusic_track_ids,
+    search_ytmusic_tracks,
+    select_match,
 )
 
 spotify_config = SpotifyConfig()
 ytmusic_config = YTMusicConfig()
-
-
-def search_youtube_music(
-    ytm: YTMusic, track_name: str, artist_name: str, auto_first: bool = False
-) -> str | None:
-    """Search for track on YouTube Music and return video ID if found"""
-    query = f"{track_name} {artist_name}"
-    logger.info(f'\nSearching YouTube Music for "{track_name} - {artist_name}"')
-
-    try:
-        results = ytm.search(query, filter="songs", limit=5)  # Show only top 5 matches
-        results = results[:5]  # Explicitly limit to 5 results
-        if not results:
-            logger.error("No matches found on YouTube Music")
-            return None
-
-        # Show all potential matches
-        logger.info("\nPotential matches on YouTube Music:")
-        matches: list[str] = []
-        for i, track in enumerate(results, 1):
-            if not track.get("title") or not track.get("artists"):
-                continue
-
-            artist_name = track["artists"][0]["name"]
-            track_name = track["title"]
-            logger.info(f"{i}. Track: {track_name}")
-            logger.info(f"   Artist: {artist_name}")
-            matches.append(track["videoId"])
-
-        if not matches:
-            logger.error("No valid matches found on YouTube Music")
-            return None
-
-        # Let user choose with 1 as default
-        if auto_first:
-            choice = "1"
-        else:
-            choice = (
-                input(
-                    "\nSelect match number (1 is default, 's' to skip, 'a' for auto-first): "
-                )
-                .strip()
-                .lower()
-            )
-            if choice == "a":
-                logger.info(
-                    "Auto-first mode enabled - will select first match for all remaining tracks"
-                )
-                return search_youtube_music(
-                    ytm, track_name, artist_name, auto_first=True
-                )
-
-        if choice == "s":
-            logger.warning("Track skipped")
-            return None
-
-        if choice == "" or choice == "1":
-            choice = "1"
-
-        if choice.isdigit() and 1 <= int(choice) <= len(matches):
-            video_id = matches[int(choice) - 1]
-            track_info = ytm.get_song(video_id)
-            if not track_info or not track_info.get("videoDetails"):
-                logger.error("Could not get track details from YouTube Music")
-                return None
-            logger.success(
-                f'Selected from YouTube Music: "{track_info["videoDetails"]["title"]} - {track_info["videoDetails"]["author"]}"'
-            )
-            return video_id
-
-        logger.warning("Invalid choice - track skipped")
-        return None
-
-    except Exception as e:
-        if "rate/request limit" in str(e).lower():
-            logger.error("Rate limit reached for YouTube Music")
-            return None
-        else:
-            logger.error(f"Error searching YouTube Music: {e}")
-            logger.error(f"Query was: {query}")
-            return None
 
 
 def add_track_to_ytmusic(
@@ -160,119 +81,24 @@ def process_tracks(
         track_name = track["name"]
         artist_name = track["artist"]
 
-        # Define search function with access to auto_first
-        def search_with_auto_first(
-            ytm: YTMusic, track_name: str, artist_name: str
-        ) -> str | None:
-            nonlocal auto_first, retry_delay
-            query = f"{track_name} {artist_name}"
-            logger.info(f'\nSearching YouTube Music for "{track_name} - {artist_name}"')
+        matches = search_ytmusic_tracks(ytm, track_name, artist_name)
+        if matches:
+            video_id = select_match(ytm, matches, auto_first)
+            if video_id:
+                if video_id in existing_tracks:
+                    logger.warning(
+                        "Track already exists in YouTube Music playlist - skipping"
+                    )
+                    tracks_skipped += 1
+                    continue
 
-            max_retries = 3
-            for attempt in range(max_retries):
-                try:
-                    results = ytm.search(
-                        query, filter="songs", limit=5
-                    )  # Show only top 5 matches
-                    results = results[:5]  # Explicitly limit to 5 results
-                    if not results:
-                        logger.error("No matches found on YouTube Music")
-                        return None
-
-                    # Show all potential matches
-                    logger.info("\nPotential matches on YouTube Music:")
-                    matches: list[str] = []
-                    for i, track in enumerate(results, 1):
-                        if not track.get("title") or not track.get("artists"):
-                            continue
-
-                        artist_name = track["artists"][0]["name"]
-                        track_name = track["title"]
-                        logger.info(f"{i}. Track: {track_name}")
-                        logger.info(f"   Artist: {artist_name}")
-                        matches.append(track["videoId"])
-
-                    if not matches:
-                        logger.error("No valid matches found on YouTube Music")
-                        return None
-
-                    # Let user choose with 1 as default
-                    if auto_first:
-                        choice = "1"
-                    else:
-                        choice = (
-                            input(
-                                "\nSelect match number (1 is default, 's' to skip, 'a' for auto-first): "
-                            )
-                            .strip()
-                            .lower()
-                        )
-                        if choice == "a":
-                            logger.info(
-                                "Auto-first mode enabled - will select first match for all remaining tracks"
-                            )
-                            auto_first = True
-                            choice = "1"
-
-                    if choice == "s":
-                        logger.warning("Track skipped")
-                        return None
-
-                    if choice == "" or choice == "1":
-                        choice = "1"
-
-                    if choice.isdigit() and 1 <= int(choice) <= len(matches):
-                        video_id = matches[int(choice) - 1]
-                        track_info = ytm.get_song(video_id)
-                        if not track_info or not track_info.get("videoDetails"):
-                            logger.error(
-                                "Could not get track details from YouTube Music"
-                            )
-                            return None
-                        logger.success(
-                            f'Selected from YouTube Music: "{track_info["videoDetails"]["title"]} - {track_info["videoDetails"]["author"]}"'
-                        )
-                        return video_id
-
-                    logger.warning("Invalid choice - track skipped")
-                    return None
-
-                except Exception as e:
-                    if "rate/request limit" in str(e).lower():
-                        if attempt < max_retries - 1:
-                            logger.warning(
-                                f"Rate limit reached. Waiting {retry_delay} seconds before retry..."
-                            )
-                            time.sleep(retry_delay)
-                            retry_delay *= 2  # Exponential backoff
-                            continue
-                        else:
-                            logger.error(
-                                "Max retries reached for rate limit. Skipping track."
-                            )
-                            return None
-                    else:
-                        logger.error(f"Error searching YouTube Music: {e}")
-                        logger.error(f"Query was: {query}")
-                        return None
-
-            return None
-
-        video_id = search_with_auto_first(ytm, track_name, artist_name)
-
-        if video_id:
-            if video_id in existing_tracks:
-                logger.warning(
-                    "Track already exists in YouTube Music playlist - skipping"
+                success, retry_delay = add_track_to_ytmusic(
+                    ytm, video_id, ytmusic_playlist_id, retry_delay
                 )
-                tracks_skipped += 1
-                continue
-
-            success, retry_delay = add_track_to_ytmusic(
-                ytm, video_id, ytmusic_playlist_id, retry_delay
-            )
-            if success:
-                tracks_added += 1
+                if success:
+                    tracks_added += 1
+                else:
+                    tracks_skipped += 1
             else:
                 tracks_skipped += 1
         else:

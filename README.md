@@ -3,8 +3,8 @@
 A CLI toolbox for syncing your music across Spotify, YouTube Music and you local music files. Features include:
 - Bidirectional playlist synchronization between Spotify and YouTube Music
 - Automatic duplicate detection and removal in Spotify and YouTube Music playlists
-- Seamless import of local music files into Spotify playlists
-- Metadata enrichment and music files management using Discogs database
+- Import of local music files into Spotify and YouTube Music playlists
+- Metadata enrichment and local music files management using Discogs database
 
 ## Prerequisites
 
