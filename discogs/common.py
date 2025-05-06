@@ -1,9 +1,13 @@
 import tomllib
 from pathlib import Path
 from logger import FileLogger
+from mutagen._file import File
+from mutagen.easyid3 import EasyID3
+from mutagen.mp3 import MP3
+from mutagen.id3._util import ID3NoHeaderError
 
 TOML_PATH = Path("config.toml")
-logger = FileLogger("discogs/discogs.log")
+logger = FileLogger(str(Path("discogs") / "discogs.log"))
 
 
 class Config:
@@ -41,3 +45,48 @@ class Config:
                 f"overwrite_cover = {str(config_data['overwrite_cover']).lower()}\n"
             )
             f.write(f"rename_file = {str(config_data['rename_file']).lower()}\n")
+
+
+def get_audio_files(directory: Path) -> list[Path]:
+    """Get all audio files in directory and subdirectories"""
+    audio_extensions = {".mp3", ".m4a", ".flac", ".ogg", ".wav"}
+    return [
+        f
+        for f in directory.rglob("*")
+        if f.is_file() and f.suffix.lower() in audio_extensions
+    ]
+
+
+def get_track_info(file_path: Path) -> tuple[str, str] | None:
+    """Get artist and title from audio file tags"""
+    try:
+        audio = File(file_path)
+        if audio is None:
+            logger.error(f"Could not read audio file: {file_path}")
+            return None
+
+        # Try EasyID3 first (more reliable for MP3)
+        if isinstance(audio, MP3):
+            try:
+                tags = EasyID3(file_path)
+                if tags is not None:
+                    artist = tags.get("artist", [""])[0]
+                    title = tags.get("title", [""])[0]
+                    if artist and title:
+                        return artist, title
+            except ID3NoHeaderError:
+                pass
+
+        # Fallback to generic tags
+        if hasattr(audio, "tags") and audio.tags is not None:
+            artist = audio.tags.get("TPE1", [""])[0]
+            title = audio.tags.get("TIT2", [""])[0]
+            if artist and title:
+                return artist, title
+
+        logger.warning(f"Missing artist or title tags in: {file_path}")
+        return None
+
+    except Exception as e:
+        logger.error(f"Error reading tags from {file_path}: {e}")
+        return None

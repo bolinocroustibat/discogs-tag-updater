@@ -109,8 +109,13 @@ Updates genre, year and image of .mp3 and .flac files based on title and artist 
 
 Updates your music files with metadata from Discogs:
 ```sh
-uv run discogs.py
+uv run discogs
 ```
+
+This will show a menu with the following options:
+- Update ID3 tags of the local files using Discogs
+- Rename files using their ID3 tags
+- Update ID3 tags and rename files (performs both operations in sequence)
 
 #### See it in action
 [https://youtu.be/mWQZJS94p40](https://youtu.be/mWQZJS94p40)  
@@ -149,13 +154,6 @@ This will show a menu with the following options:
 For each track found, you'll be prompted to confirm whether you want to add it to your playlist.
 
 ## TODO
-
-### Discogs Tag Updater
-- Add feature to rename local files from ID3 tags
-- Add a main menu to ask the user what they want to do:
-  - Update tags
-  - Rename files
-  - Both
 
 ### Common Improvements
 - Ask user for local path if not provided in `config.toml` for:
