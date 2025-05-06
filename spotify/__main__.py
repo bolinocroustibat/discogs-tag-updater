@@ -3,7 +3,7 @@ from pathlib import Path
 import inquirer
 
 from spotify.common import Config, logger
-from spotify.add_tracks import main as add_tracks_main
+from spotify.add_local_tracks import main as add_tracks_main
 from spotify.manage_duplicates import main as manage_duplicates_main
 from spotify.import_from_ytmusic import main as import_from_ytmusic_main
 
