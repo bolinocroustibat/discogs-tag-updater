@@ -4,13 +4,13 @@ import time
 
 from ytmusicapi import YTMusic
 from tqdm import tqdm
-import spotipy
 
 from spotify.common import (
     Config as SpotifyConfig,
     setup_spotify,
     logger,
     select_playlist as select_spotify_playlist,
+    get_spotify_tracks,
 )
 from ytmusic.common import (
     Config as YTMusicConfig,
@@ -101,57 +101,6 @@ def search_youtube_music(
             logger.error(f"Error searching YouTube Music: {e}")
             logger.error(f"Query was: {query}")
             return None
-
-
-def get_spotify_tracks(sp: spotipy.Spotify, spotify_playlist_id: str) -> list[dict]:
-    """Get tracks from Spotify playlist"""
-    logger.info(f'Fetching tracks from Spotify playlist "{spotify_playlist_id}"...')
-    tracks: list[dict] = []
-    try:
-        if spotify_playlist_id == "liked":
-            # Special case for Liked Songs
-            results = sp.current_user_saved_tracks()
-            while results:
-                for item in results["items"]:
-                    if not item.get("track"):
-                        continue
-                    track = item["track"]
-                    if not track.get("name") or not track.get("artists"):
-                        continue
-                    tracks.append(
-                        {"name": track["name"], "artist": track["artists"][0]["name"]}
-                    )
-                if results["next"]:
-                    results = sp.next(results)
-                else:
-                    break
-        else:
-            # Regular playlist
-            results = sp.playlist_items(spotify_playlist_id)
-            while results:
-                for item in results["items"]:
-                    if not item.get("track"):
-                        continue
-                    track = item["track"]
-                    if not track.get("name") or not track.get("artists"):
-                        continue
-                    tracks.append(
-                        {"name": track["name"], "artist": track["artists"][0]["name"]}
-                    )
-                if results["next"]:
-                    results = sp.next(results)
-                else:
-                    break
-    except Exception as e:
-        logger.error(f"Error fetching Spotify playlist: {e}")
-        sys.exit(1)
-
-    if not tracks:
-        logger.warning("No tracks found in Spotify playlist")
-        sys.exit(1)
-
-    logger.info(f"Found {len(tracks)} tracks in Spotify playlist")
-    return tracks
 
 
 def get_existing_ytmusic_tracks(ytm: YTMusic, ytmusic_playlist_id: str) -> set[str]:

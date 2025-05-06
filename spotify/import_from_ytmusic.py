@@ -2,7 +2,6 @@ import sys
 from pathlib import Path
 import time
 
-from ytmusicapi import YTMusic
 from tqdm import tqdm
 import spotipy
 
@@ -16,6 +15,7 @@ from ytmusic.common import (
     Config as YTMusicConfig,
     setup_ytmusic,
     select_playlist as select_ytmusic_playlist,
+    get_ytmusic_tracks,
 )
 
 spotify_config = SpotifyConfig()
@@ -101,49 +101,6 @@ def select_match(sp: spotipy.Spotify, matches: list[dict]) -> str | None:
 
     logger.warning("Invalid choice - track skipped")
     return None
-
-
-def get_ytmusic_tracks(ytm: YTMusic, ytmusic_playlist_id: str) -> list[dict]:
-    """Get tracks from YouTube Music playlist"""
-    logger.info(
-        f'Fetching tracks from YouTube Music playlist "{ytmusic_playlist_id}"...'
-    )
-    tracks: list[dict] = []
-    try:
-        if ytmusic_playlist_id == "LM":
-            # Special case for Liked Music
-            results = ytm.get_liked_songs()
-            for track in results["tracks"]:
-                if not track.get("title") or not track.get("artists"):
-                    continue
-                tracks.append(
-                    {
-                        "name": track["title"],
-                        "artist": track["artists"][0]["name"],
-                    }
-                )
-        else:
-            # Regular playlist
-            results = ytm.get_playlist(ytmusic_playlist_id)
-            for track in results["tracks"]:
-                if not track.get("title") or not track.get("artists"):
-                    continue
-                tracks.append(
-                    {
-                        "name": track["title"],
-                        "artist": track["artists"][0]["name"],
-                    }
-                )
-    except Exception as e:
-        logger.error(f"Error fetching YouTube Music playlist: {e}")
-        sys.exit(1)
-
-    if not tracks:
-        logger.warning("No tracks found in YouTube Music playlist")
-        sys.exit(1)
-
-    logger.info(f"Found {len(tracks)} tracks in YouTube Music playlist")
-    return tracks
 
 
 def get_existing_spotify_tracks(
