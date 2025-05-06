@@ -310,32 +310,6 @@ def main(directory: Path, config=None, ds=None) -> None:
     if not config or not ds:
         raise ValueError("config and ds parameters are required")
 
-    logger.log(
-        """
-              @@@@@@@@@@@@
-          @@@               ###########
-       @@                  #          #
-     @@                   #   COVER   #
-   @@                      #          #
-  @@                        ###########
- @@
- @              @@@@@@@     ###########
-@@            @@@@@@@@@@   #          #
-@            @@@@@  @@@@@ #   STYLE   #
-@            @@@@@  @@@@@  #          #
-@@            @@@@@@@@@@    ###########
- @             @@@@@@@@
- @@          @@@            ###########
-  @@       @@@             #          #
-    @    @@@@             #    YEAR   #
-     @@@@@@@               #          #
-       @@@@@                ###########
-            @@@@@@@@@@@@@@
-
-      Discogs Tag Updater by Aesir
-
-    """
-    )
     # check if directory path exists and valid
     if not directory.is_dir():
         logger.error(f'Directory "{directory}" not found.')

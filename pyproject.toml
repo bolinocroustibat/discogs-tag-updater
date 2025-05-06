@@ -1,7 +1,7 @@
 [project]
-name = "discogs-tag-updater"
-version = "2.0.1"
-description = "Updates genre, year and covers tags of .mp3 and .flac files based on track title and artist using the Discogs database."
+name = "music-sync-toolbox"
+version = "2.1.0"
+description = "A CLI toolbox for syncing your music across Spotify, YouTube Music and you local music files."
 authors = [
     { name = "Aesir" },
     { name = "bolinocroustibat", email = "me@adriencarpentier.com" },
