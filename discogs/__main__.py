@@ -61,9 +61,9 @@ def main() -> None:
             "action",
             message="What would you like to do?",
             choices=[
-                ("Update ID3 tags of the local files using Discogs", "update"),
-                ("Rename files using their ID3 tags", "rename"),
-                ("Update ID3 tags and rename files", "both"),
+                ("💿 ➡️ 🏷️ Update ID3 tags of the local files using Discogs", "update"),
+                ("🏷️ ➡️ 📁 Rename files using their ID3 tags", "rename"),
+                ("💿 ➡️ 🏷️ ➡️ 📁 Update ID3 tags and rename files", "both"),
             ],
         ),
     ]
@@ -72,11 +72,11 @@ def main() -> None:
         logger.error("No action selected")
         sys.exit(1)
 
-    if answers["action"] == "update":
+    if answers["action"] == "💿 ✏️ 🏷️ Update ID3 tags of the local files using Discogs":
         update_tags_main(config.media_path, config, ds)
-    elif answers["action"] == "rename":
+    elif answers["action"] == "�� ✏️ 📁 Rename files using their ID3 tags":
         rename_files_main()
-    else:  # both
+    else:  # 💿 ✏️ 🏷️ ➡️ 📁 Update ID3 tags and rename files
         logger.info("\nStep 1: Updating ID3 tags from Discogs...")
         update_tags_main(config.media_path, config, ds)
         logger.info("\nStep 2: Renaming files using updated ID3 tags...")

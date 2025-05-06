@@ -66,7 +66,7 @@ def setup_spotify() -> spotipy.Spotify:
                 redirect_uri=config.redirect_uri,
                 scope=scope,
                 open_browser=True,
-                cache_path=".spotify_token_cache",
+                cache_path="spotify/.spotify_token_cache",
             )
         )
         # Test the authentication

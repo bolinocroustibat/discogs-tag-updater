@@ -3,9 +3,9 @@
 ## Prerequisites
 
 - Requires Python >=3.11 and [uv](https://docs.astral.sh/uv/getting-started/installation/).
-- For the Discogs tag updater, it requires a Discogs developper account and free API key: [https://www.discogs.com/settings/developers](https://www.discogs.com/settings/developers)
-- For Spotify integration: requires a Spotify Developer account: [https://developer.spotify.com/dashboard](https://developer.spotify.com/dashboard)
-- For YouTube Music integration: it requires either:
+- For the Discogs (💿) tag updater, it requires a Discogs developper account and free API key: [https://www.discogs.com/settings/developers](https://www.discogs.com/settings/developers)
+- For Spotify (🟢) integration: requires a Spotify Developer account: [https://developer.spotify.com/dashboard](https://developer.spotify.com/dashboard)
+- For YouTube Music (🔴) integration: it requires either:
   - A YouTube Music Developer account: [https://console.cloud.google.com/apis/api/youtube.googleapis.com/credentials](https://console.cloud.google.com/apis/api/youtube.googleapis.com/credentials)
   - Or a YouTube Music session cookie file (see [https://ytmusicapi.readthedocs.io/en/stable/setup/browser.html](https://ytmusicapi.readthedocs.io/en/stable/setup/browser.html))
 
@@ -21,16 +21,16 @@ On the first run, it will ask for some inputs. You can change these variables af
 `path`  
 The path to your music files directory.
 
-### Discogs Setup
+### Discogs (💿) Setup
 For the discogs access token, you can create one [here](https://www.discogs.com/settings/developers).
 
-### Spotify Setup
+### Spotify (🟢) Setup
 1. Create an application in your [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
 2. Get your `client_id` and `client_secret` from the application settings
 3. Add `http://localhost:8888/callback` to the Redirect URIs in your application settings
 4. Get your target playlist ID (the last part of the playlist URL: spotify:playlist:**YOUR_PLAYLIST_ID**)
 
-### YouTube Music Setup
+### YouTube Music (🔴) Setup
 You can choose between two authentication methods:
 
 1. OAuth (Recommended):
@@ -50,7 +50,7 @@ You can choose between two authentication methods:
 `path`  
 The path to your music files directory.
 
-### Discogs Options
+### Discogs (💿) Options
 `token`  
 Your Discogs API token.
 
@@ -74,7 +74,7 @@ If file is already named correctly, it will not rename it.
 If artist and/or title is empty, it will not rename it.
 Otherwise, it will rename it to `artist - title.ext`.
 
-### Spotify Options
+### Spotify (🟢) Options
 `client_id`  
 Your Spotify application client ID.
 
@@ -87,7 +87,7 @@ The redirect URI for OAuth authentication (default: http://localhost:8888/callba
 `playlist_id`  
 The ID of the playlist where you want to add tracks. If not set, you'll be prompted to select a playlist when running the script.
 
-### YouTube Music Options
+### YouTube Music (🔴) Options
 `client_id`  
 Your YouTube Music OAuth client ID (only needed for OAuth method).
 
@@ -99,7 +99,7 @@ The ID of the playlist where you want to add tracks. If not set, you'll be promp
 
 ## Scripts
 
-### Discogs Tag Updater
+### Discogs (💿) Tag Updater
 
 Forked from https://notabug.org/Aesir.
 
@@ -113,15 +113,15 @@ uv run discogs
 ```
 
 This will show a menu with the following options:
-- Update ID3 tags of the local files using Discogs
-- Rename files using their ID3 tags
-- Update ID3 tags and rename files (performs both operations in sequence)
+- 💿✏️🏷️ Update ID3 tags of the local files using Discogs
+- 💿✏️📁 Rename files using their ID3 tags
+- 💿✏️🏷️➡️📁 Update ID3 tags and rename files
 
 #### See it in action
 [https://youtu.be/mWQZJS94p40](https://youtu.be/mWQZJS94p40)  
 Thanks to Bas Curtiz for creating the video.
 
-### Spotify utilities
+### Spotify (🟢) utilities
 
 The first time you run the Spotify script, it will:
 1. Open your browser
@@ -136,10 +136,11 @@ uv run spotify
 ```
 
 This will show a menu with the following options:
-- Add local files to Spotify playlist
-- Find and remove duplicate tracks in Spotify playlist
+- 🟢➕ Add local files to Spotify playlist
+- 🔴➡️🟢 Import tracks from YouTube Music playlist to Spotify Playlist
+- 🟢🧹 Find and remove duplicate tracks in Spotify playlist
 
-### YouTube Music utilities
+### YouTube Music (🔴) utilities
 
 #### How to run
 
@@ -148,8 +149,8 @@ uv run ytmusic
 ```
 
 This will show a menu with the following options:
-- Import tracks from Spotify playlist
-- Find and remove duplicate tracks in YouTube Music playlist
+- 🟢➡️🔴 Import tracks from Spotify playlist to YouTube Music Playlist
+- 🔴🧹 Find and remove duplicate tracks in YouTube Music playlist
 
 For each track found, you'll be prompted to confirm whether you want to add it to your playlist.
 
@@ -157,11 +158,11 @@ For each track found, you'll be prompted to confirm whether you want to add it t
 
 ### Common Improvements
 - Ask user for local path if not provided in `config.toml` for:
-  - Discogs tag updater
-  - Spotify utilities
-  - YouTube Music utilities
+  - Discogs (💿) tag updater
+  - Spotify (🟢) utilities
+  - YouTube Music (🔴) utilities
 
-### Spotify Improvements
+### Spotify (🟢) Improvements
 - In `spotify/add_tracks.py`: Compare Spotify matches with local files BEFORE asking user for match selection
   - This will help identify the best match automatically
   - Only ask user if no exact match is found

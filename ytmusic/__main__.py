@@ -55,11 +55,8 @@ def main() -> None:
             "action",
             message="What would you like to do?",
             choices=[
-                ("Import tracks from Spotify playlist", "import"),
-                (
-                    "Find and remove duplicate tracks in YouTube Music playlist",
-                    "duplicates",
-                ),
+                ("🟢 ➡️ 🔴 Import tracks from Spotify playlist to YouTube Music Playlist", "import"),
+                ("🔴 🧹 Find and remove duplicate tracks in YouTube Music playlist", "duplicates"),
             ],
         ),
     ]
