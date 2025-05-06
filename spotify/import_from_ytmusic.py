@@ -11,6 +11,7 @@ from spotify.common import (
     select_playlist as select_spotify_playlist,
     get_spotify_track_ids,
     logger,
+    search_spotify,
 )
 from ytmusic.common import (
     Config as YTMusicConfig,
@@ -21,87 +22,6 @@ from ytmusic.common import (
 
 spotify_config = SpotifyConfig()
 ytmusic_config = YTMusicConfig()
-
-
-def search_spotify(
-    sp: spotipy.Spotify, track_name: str, artist_name: str
-) -> list[dict] | None:
-    """Search for track on Spotify and return list of potential matches"""
-    query = f"track:{track_name} artist:{artist_name}"
-    logger.info(f'\nSearching Spotify for "{track_name} - {artist_name}"')
-
-    try:
-        results = sp.search(query, type="track", limit=5)
-        if (
-            not results
-            or not results.get("tracks")
-            or not results["tracks"].get("items")
-        ):
-            logger.error("No matches found on Spotify")
-            return None
-
-        # Format matches
-        matches: list[dict] = []
-        for track in results["tracks"]["items"]:
-            if not track.get("name") or not track.get("artists"):
-                continue
-
-            matches.append(
-                {
-                    "id": track["id"],
-                    "name": track["name"],
-                    "artist": track["artists"][0]["name"],
-                }
-            )
-
-        if not matches:
-            logger.error("No valid matches found on Spotify")
-            return None
-
-        return matches
-
-    except Exception as e:
-        logger.error(f"Error searching Spotify: {e}")
-        logger.error(f"Query was: {query}")
-        return None
-
-
-def select_match(sp: spotipy.Spotify, matches: list[dict]) -> str | None:
-    """Let user select a match from the list of potential matches"""
-    # Show all potential matches
-    logger.info("\nPotential matches on Spotify:")
-    for i, track in enumerate(matches, 1):
-        logger.info(f"{i}. Track: {track['name']}")
-        logger.info(f"   Artist: {track['artist']}")
-
-    # Let user choose with 1 as default
-    choice = (
-        input("\nSelect match number (1 is default, 's' to skip): ").strip().lower()
-    )
-    if choice == "s":
-        logger.warning("Track skipped")
-        return None
-
-    if choice == "" or choice == "1":
-        choice = "1"
-
-    if choice.isdigit() and 1 <= int(choice) <= len(matches):
-        track_id = matches[int(choice) - 1]["id"]
-        track_info = sp.track(track_id)
-        if (
-            not track_info
-            or not track_info.get("name")
-            or not track_info.get("artists")
-        ):
-            logger.error("Could not get track details from Spotify")
-            return None
-        logger.success(
-            f'Selected from Spotify: "{track_info["name"]} - {track_info["artists"][0]["name"]}"'
-        )
-        return track_id
-
-    logger.warning("Invalid choice - track skipped")
-    return None
 
 
 def add_track_to_spotify(
@@ -165,97 +85,47 @@ def process_tracks(
             sp: spotipy.Spotify, track_name: str, artist_name: str
         ) -> str | None:
             nonlocal auto_first, retry_delay
-            query = f"{track_name} {artist_name}"
-            logger.info(f'\nSearching Spotify for "{track_name} - {artist_name}"')
+            matches = search_spotify(sp, track_name, artist_name)
+            if not matches:
+                return None
 
-            max_retries = 3
-            for attempt in range(max_retries):
-                try:
-                    results = sp.search(
-                        query, type="track", limit=5
-                    )  # Show only top 5 matches
-                    results = results["tracks"]["items"][
-                        :5
-                    ]  # Explicitly limit to 5 results
-                    if not results:
-                        logger.error("No matches found on Spotify")
-                        return None
+            # Let user choose with 1 as default
+            if auto_first:
+                choice = "1"
+            else:
+                choice = (
+                    input(
+                        "\nSelect match number (1 is default, 's' to skip, 'a' for auto-first): "
+                    )
+                    .strip()
+                    .lower()
+                )
+                if choice == "a":
+                    logger.info(
+                        "Auto-first mode enabled - will select first match for all remaining tracks"
+                    )
+                    auto_first = True
+                    choice = "1"
 
-                    # Show all potential matches
-                    logger.info("\nPotential matches on Spotify:")
-                    matches: list[str] = []
-                    for i, track in enumerate(results, 1):
-                        if not track.get("name") or not track.get("artists"):
-                            continue
+            if choice == "s":
+                logger.warning("Track skipped")
+                return None
 
-                        artist_name = track["artists"][0]["name"]
-                        track_name = track["name"]
-                        logger.info(f"{i}. Track: {track_name}")
-                        logger.info(f"   Artist: {artist_name}")
-                        matches.append(track["id"])
+            if choice == "" or choice == "1":
+                choice = "1"
 
-                    if not matches:
-                        logger.error("No valid matches found on Spotify")
-                        return None
-
-                    # Let user choose with 1 as default
-                    if auto_first:
-                        choice = "1"
-                    else:
-                        choice = (
-                            input(
-                                "\nSelect match number (1 is default, 's' to skip, 'a' for auto-first): "
-                            )
-                            .strip()
-                            .lower()
-                        )
-                        if choice == "a":
-                            logger.info(
-                                "Auto-first mode enabled - will select first match for all remaining tracks"
-                            )
-                            auto_first = True
-                            choice = "1"
-
-                    if choice == "s":
-                        logger.warning("Track skipped")
-                        return None
-
-                    if choice == "" or choice == "1":
-                        choice = "1"
-
-                    if choice.isdigit() and 1 <= int(choice) <= len(matches):
-                        track_id = matches[int(choice) - 1]
-                        track_info = sp.track(track_id)
-                        if not track_info:
-                            logger.error("Could not get track details from Spotify")
-                            return None
-                        logger.success(
-                            f'Selected from Spotify: "{track_info["name"]} - {track_info["artists"][0]["name"]}"'
-                        )
-                        return track_id
-
-                    logger.warning("Invalid choice - track skipped")
+            if choice.isdigit() and 1 <= int(choice) <= len(matches):
+                track_id = matches[int(choice) - 1]["id"]
+                track_info = sp.track(track_id)
+                if not track_info:
+                    logger.error("Could not get track details from Spotify")
                     return None
+                logger.success(
+                    f'Selected from Spotify: "{track_info["name"]} - {track_info["artists"][0]["name"]}"'
+                )
+                return track_id
 
-                except Exception as e:
-                    if "rate/request limit" in str(e).lower():
-                        if attempt < max_retries - 1:
-                            logger.warning(
-                                f"Rate limit reached. Waiting {retry_delay} seconds before retry..."
-                            )
-                            time.sleep(retry_delay)
-                            retry_delay *= 2  # Exponential backoff
-                            continue
-                        else:
-                            logger.error(
-                                "Max retries reached for rate limit. Skipping track."
-                            )
-                            return None
-                    else:
-                        logger.error(f"Error searching Spotify: {e}")
-                        logger.error(f"Query was: {query}")
-                        return None
-
+            logger.warning("Invalid choice - track skipped")
             return None
 
         track_id = search_with_auto_first(sp, track_name, artist_name)

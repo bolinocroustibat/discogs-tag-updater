@@ -6,7 +6,6 @@ import time
 from pathlib import Path
 
 import requests
-from colorama import Fore
 from discogs_client.exceptions import HTTPError
 from fuzzywuzzy import process
 from mutagen.easyid3 import EasyID3
@@ -280,16 +279,13 @@ class DTag:
                 if res[best_one].images:
                     self.image = res[best_one].images[0]["uri"]
             else:
-                print(Fore.RED + "Not Found on Discogs.")
+                logger.warning("Not Found on Discogs.")
                 return False
         except HTTPError:
             if retry == 0:
-                print(f"Too many API calls, skipping {self}")
+                logger.error(f"Too many API calls, skipping {self}")
                 return False
-            print(
-                Fore.MAGENTA
-                + f"Too many API calls. {retry} retries left, next retry in 5 sec."
-            )
+            logger.error(f"Too many API calls. {retry} retries left, next retry in 5 sec.")
             time.sleep(5)
             self.search(retry=retry)
 

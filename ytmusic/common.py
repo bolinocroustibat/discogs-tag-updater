@@ -155,15 +155,15 @@ def list_user_playlists(ytm: YTMusic) -> list[PlaylistInfo]:
                 # Special case for Liked Music
                 try:
                     liked_tracks = ytm.get_liked_songs()
-                    track_count = liked_tracks.get("trackCount", 0)
                 except Exception as e:
                     logger.warning(f"Could not get liked songs count: {e}")
-                    track_count = 0
                 liked_music = {
                     "name": playlist["title"],
                     "id": playlist["playlistId"],
-                    "track_count": track_count,
+                    "track_count": 0,
                 }
+                logger.success('Using YouTube Music playlist "Liked Music"')
+                continue
             else:
                 # Regular playlist
                 try:
@@ -205,12 +205,10 @@ def select_playlist(ytm: YTMusic, playlist_id: str | None = None) -> str:
                 # Special case for Liked Music
                 try:
                     liked_tracks = ytm.get_liked_songs()
-                    track_count = liked_tracks.get("trackCount", 0)
                 except Exception as e:
                     logger.warning(f"Could not get liked songs count: {e}")
-                    track_count = 0
                 logger.success('Using YouTube Music playlist "Liked Music"')
-                return playlist_id
+                return "LM"
             else:
                 playlist = ytm.get_playlist(playlist_id)
                 logger.success(f'Using YouTube Music playlist "{playlist["title"]}"')

@@ -2,132 +2,12 @@ import sys
 from pathlib import Path
 import time
 
-import spotipy
-from mutagen.easyid3 import EasyID3
-from mutagen.flac import FLAC
-from mutagen.mp4 import MP4
 from tqdm import tqdm
 
-from spotify.common import Config, setup_spotify, logger, select_playlist
+from spotify.common import Config, setup_spotify, logger, select_playlist, search_spotify, select_match
+from discogs.music_file import MusicFile
 
 config = Config()
-
-
-class MusicFile:
-    def __init__(self, path: Path) -> None:
-        self.path: Path = path
-        self.suffix: str = path.suffix
-        self.artist: str = ""
-        self.title: str = ""
-        self._get_tags()
-
-    def _get_tags(self) -> None:
-        """Extract artist and title tags from music files"""
-        if self.suffix == ".flac":
-            try:
-                audio = FLAC(self.path)
-                self.artist = audio["artist"][0]
-                self.title = audio["title"][0]
-            except Exception as e:
-                logger.error(f"Error reading FLAC tags: {e}")
-
-        elif self.suffix == ".mp3":
-            try:
-                audio = EasyID3(self.path)
-                self.artist = audio["artist"][0]
-                self.title = audio["title"][0]
-            except Exception as e:
-                logger.error(f"Error reading MP3 tags: {e}")
-
-        elif self.suffix == ".m4a":
-            try:
-                audio = MP4(self.path)
-                self.artist = audio["\xa9ART"][0]
-                self.title = audio["\xa9nam"][0]
-            except Exception as e:
-                logger.error(f"Error reading M4A tags: {e}")
-
-    def search_spotify(self, sp: spotipy.Spotify) -> list[dict] | None:
-        """Search for track on Spotify and return list of potential matches"""
-        if not self.artist or not self.title:
-            logger.error(f"Missing tags for local file {self.path.name}")
-            return None
-
-        query = f"track:{self.title} artist:{self.artist}"
-        logger.info(f'\nLocal file: "{self.path.name}"')
-        logger.info(f'Searching Spotify for "{self.title} - {self.artist}"')
-
-        try:
-            results = sp.search(query, type="track", limit=5)
-            if (
-                not results
-                or not results.get("tracks")
-                or not results["tracks"].get("items")
-            ):
-                logger.error("No matches found on Spotify")
-                return None
-
-            # Format matches
-            matches: list[dict] = []
-            for track in results["tracks"]["items"]:
-                if not track.get("name") or not track.get("artists"):
-                    continue
-
-                matches.append(
-                    {
-                        "id": track["id"],
-                        "name": track["name"],
-                        "artist": track["artists"][0]["name"],
-                    }
-                )
-
-            if not matches:
-                logger.error("No valid matches found on Spotify")
-                return None
-
-            return matches
-
-        except Exception as e:
-            logger.error(f"Error searching Spotify: {e}")
-            logger.error(f"Query was: {query}")
-            return None
-
-    def select_match(self, sp: spotipy.Spotify, matches: list[dict]) -> str | None:
-        """Let user select a match from the list of potential matches"""
-        # Show all potential matches
-        logger.info("\nPotential matches from Spotify:")
-        for i, track in enumerate(matches, 1):
-            logger.info(f"{i}. Track: {track['name']}")
-            logger.info(f"   Artist: {track['artist']}")
-
-        # Let user choose with 1 as default
-        choice = (
-            input("\nSelect match number (1 is default, 's' to skip): ").strip().lower()
-        )
-        if choice == "s":
-            logger.warning("Track skipped")
-            return None
-
-        if choice == "" or choice == "1":
-            choice = "1"
-
-        if choice.isdigit() and 1 <= int(choice) <= len(matches):
-            track_id = matches[int(choice) - 1]["id"]
-            track_info = sp.track(track_id)
-            if (
-                not track_info
-                or not track_info.get("name")
-                or not track_info.get("artists")
-            ):
-                logger.error("Could not get track details from Spotify")
-                return None
-            logger.success(
-                f'Selected from Spotify: "{track_info["name"]} - {track_info["artists"][0]["name"]}"'
-            )
-            return track_id
-
-        logger.warning("Invalid choice - track skipped")
-        return None
 
 
 def main() -> None:
@@ -137,19 +17,12 @@ def main() -> None:
     # Get playlist ID from config or user selection
     playlist_id = select_playlist(sp, config.playlist_id)
 
-    # Scan directory for music files
-    logger.info(f"Scanning local directory: {config.media_path}")
-
-    # Debug: Check if path exists
-    if not config.media_path.exists():
-        logger.error(f"Local directory does not exist: {config.media_path}")
+    # Check if media path is set
+    if not config.media_path:
+        logger.error("Media path is not set")
         sys.exit(1)
 
-    # Debug: List all files in directory
-    logger.info("Local files found in directory:")
-    for p in sorted(Path(config.media_path).glob("**/*"), key=lambda x: x.name.lower()):
-        logger.info(f"Found local file: {p.name} (suffix: {p.suffix})")
-
+    # Scan directory for music files
     music_files: list[MusicFile] = [
         MusicFile(p)
         for p in sorted(
@@ -158,7 +31,7 @@ def main() -> None:
         if p.suffix.lower() in [".flac", ".mp3", ".m4a"]
     ]
 
-    logger.info(f"Number of local music files found: {len(music_files)}")
+    logger.info(f"Found {len(music_files)} music files in {config.media_path}")
 
     if not music_files:
         logger.warning("No local .mp3, .flac, or .m4a files found in directory")
@@ -183,9 +56,9 @@ def main() -> None:
     # Process each music file
     logger.info("\nProcessing files...")
     for music_file in tqdm(music_files, desc="Processing files", unit="file"):
-        matches = music_file.search_spotify(sp)
+        matches = search_spotify(sp, music_file.title, music_file.artist, music_file.path.name)
         if matches:
-            track_id = music_file.select_match(sp, matches)
+            track_id = select_match(sp, matches)
             if track_id:
                 if track_id in existing_tracks:
                     logger.warning(

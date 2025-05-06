@@ -640,7 +640,6 @@ name = "music-sync-toolbox"
 version = "2.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "colorama" },
     { name = "discogs-client" },
     { name = "fuzzywuzzy" },
     { name = "inquirer", version = "2.10.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.8'" },
@@ -662,7 +661,6 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "colorama", specifier = ">=0.4.4,<1.0.0" },
     { name = "discogs-client", specifier = "==2.3.0" },
     { name = "fuzzywuzzy", specifier = ">=0.18.0,<1.0.0" },
     { name = "inquirer", specifier = ">=2.10.1" },

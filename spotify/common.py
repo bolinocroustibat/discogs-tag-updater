@@ -280,3 +280,109 @@ def get_spotify_track_ids(sp: spotipy.Spotify, spotify_playlist_id: str) -> set[
         logger.error(f"Error fetching Spotify playlist: {e}")
         sys.exit(1)
     return existing_tracks
+
+
+def search_spotify(
+    sp: spotipy.Spotify, track_name: str, artist_name: str, file_name: str | None = None
+) -> list[dict] | None:
+    """Search for track on Spotify and return list of potential matches
+    
+    Args:
+        sp: Spotify client
+        track_name: Name of the track
+        artist_name: Name of the artist
+        file_name: Optional name of the local file (for logging purposes)
+        
+    Returns:
+        list[dict] | None: List of potential matches with id, name, and artist, or None if no matches
+    """
+    if not track_name or not artist_name:
+        if file_name:
+            logger.error(f"Missing tags for local file {file_name}")
+        return None
+
+    query = f"track:{track_name} artist:{artist_name}"
+    if file_name:
+        logger.info(f'\nLocal file: "{file_name}"')
+    logger.info(f'Searching Spotify for "{track_name} - {artist_name}"')
+
+    try:
+        results = sp.search(query, type="track", limit=5)
+        if (
+            not results
+            or not results.get("tracks")
+            or not results["tracks"].get("items")
+        ):
+            logger.error("No matches found on Spotify")
+            return None
+
+        # Format matches
+        matches: list[dict] = []
+        for track in results["tracks"]["items"]:
+            if not track.get("name") or not track.get("artists"):
+                continue
+
+            matches.append(
+                {
+                    "id": track["id"],
+                    "name": track["name"],
+                    "artist": track["artists"][0]["name"],
+                }
+            )
+
+        if not matches:
+            logger.error("No valid matches found on Spotify")
+            return None
+
+        return matches
+
+    except Exception as e:
+        logger.error(f"Error searching Spotify: {e}")
+        logger.error(f"Query was: {query}")
+        return None
+
+
+def select_match(sp: spotipy.Spotify, matches: list[dict]) -> str | None:
+    """Let user select a match from the list of potential matches
+    
+    Args:
+        sp: Spotify client
+        matches: List of potential matches with id, name, and artist
+        
+    Returns:
+        str | None: Selected track ID or None if skipped/invalid
+    """
+    # Show all potential matches
+    logger.info("\nPotential matches from Spotify:")
+    for i, track in enumerate(matches, 1):
+        logger.info(f"{i}. Track: {track['name']}")
+        logger.info(f"   Artist: {track['artist']}")
+
+    # Let user choose with 1 as default
+    choice = (
+        input("\nSelect match number (1 is default, 's' to skip): ").strip().lower()
+    )
+    if choice == "s":
+        logger.warning("Track skipped")
+        return None
+
+    if choice == "" or choice == "1":
+        choice = "1"
+
+    if choice.isdigit() and 1 <= int(choice) <= len(matches):
+        track_id = matches[int(choice) - 1]["id"]
+        track_info = sp.track(track_id)
+        if (
+            not track_info
+            or not track_info.get("name")
+            or not track_info.get("artists")
+        ):
+            logger.error("Could not get track details from Spotify")
+            return None
+        logger.success(
+            f'Selected from Spotify: "{track_info["name"]} - {track_info["artists"][0]["name"]}"'
+        )
+        return track_id
+
+    logger.warning("Invalid choice - track skipped")
+    return None
