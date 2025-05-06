@@ -23,11 +23,11 @@ class Config:
     def __init__(self) -> None:
         with open(TOML_PATH, "rb") as f:
             config = tomllib.load(f)
-        
+
         # Remove escape characters from the path and convert to Path object
         raw_path = config["common"]["path"].replace("\\", "")
         self.media_path = Path(raw_path)
-        
+
         # YouTube Music config
         ytmusic_config = config["ytmusic"]
         self.client_id = ytmusic_config["client_id"]
@@ -63,19 +63,25 @@ def check_ytmusic_setup_oauth() -> None:
         logger.info("   - Add your Google account email under 'Test users'")
         logger.info("5. Go to APIs & Services > Credentials")
         logger.info("   - Create OAuth 2.0 Client ID")
-        logger.info("   - Select 'TVs and Limited Input devices' as the application type")
+        logger.info(
+            "   - Select 'TVs and Limited Input devices' as the application type"
+        )
         logger.info("   - Copy the Client ID and Client Secret")
         logger.info("\nThen add them to your config.toml file:")
         logger.info("[ytmusic]")
         logger.info("client_id = YOUR_CLIENT_ID")
         logger.info("client_secret = YOUR_CLIENT_SECRET")
-        logger.info("\nAfter that, run 'uv run ytmusicapi oauth' in your terminal to create oauth.json")
+        logger.info(
+            "\nAfter that, run 'uv run ytmusicapi oauth' in your terminal to create oauth.json"
+        )
         logger.info("Follow the instructions to complete the OAuth flow")
         sys.exit(1)
 
     if not OAUTH_PATH.is_file():
         logger.error("oauth.json file not found.")
-        logger.info(f"\nRun 'uv run ytmusicapi oauth' in your terminal to create {OAUTH_PATH}")
+        logger.info(
+            f"\nRun 'uv run ytmusicapi oauth' in your terminal to create {OAUTH_PATH}"
+        )
         logger.info("Follow the instructions to complete the OAuth flow")
         sys.exit(1)
     logger.success(f"Found oauth.json at: {OAUTH_PATH}")
@@ -115,13 +121,12 @@ def choose_auth_method() -> str:
 def setup_ytmusic() -> YTMusic:
     """Initialize YouTube Music client"""
     auth_method = choose_auth_method()
-    
+
     if auth_method == "oauth":
         check_ytmusic_setup_oauth()
         config = Config()
         oauth_credentials = OAuthCredentials(
-            client_id=config.client_id,
-            client_secret=config.client_secret
+            client_id=config.client_id, client_secret=config.client_secret
         )
         return YTMusic(str(OAUTH_PATH), oauth_credentials=oauth_credentials)
     else:  # browser method
@@ -156,7 +161,9 @@ def list_user_playlists(ytm: YTMusic) -> list[PlaylistInfo]:
                     playlist_details = ytm.get_playlist(playlist["playlistId"])
                     track_count = playlist_details.get("trackCount", 0)
                 except Exception as e:
-                    logger.warning(f"Could not get track count for playlist {playlist['title']}: {e}")
+                    logger.warning(
+                        f"Could not get track count for playlist {playlist['title']}: {e}"
+                    )
                     track_count = 0
 
             user_playlists.append(
@@ -167,7 +174,9 @@ def list_user_playlists(ytm: YTMusic) -> list[PlaylistInfo]:
                 }
             )
         except Exception as e:
-            logger.warning(f"Error processing playlist {playlist.get('title', 'Unknown')}: {e}")
+            logger.warning(
+                f"Error processing playlist {playlist.get('title', 'Unknown')}: {e}"
+            )
             continue
 
     return user_playlists

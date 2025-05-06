@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
 import time
-from typing import Optional
 
 import spotipy
 from mutagen.easyid3 import EasyID3
@@ -48,7 +47,7 @@ class MusicFile:
             except Exception as e:
                 logger.error(f"Error reading M4A tags: {e}")
 
-    def search_spotify(self, sp: spotipy.Spotify) -> Optional[list[dict]]:
+    def search_spotify(self, sp: spotipy.Spotify) -> list[dict] | None:
         """Search for track on Spotify and return list of potential matches"""
         if not self.artist or not self.title:
             logger.error(f"Missing tags for local file {self.path.name}")
@@ -74,11 +73,13 @@ class MusicFile:
                 if not track.get("name") or not track.get("artists"):
                     continue
 
-                matches.append({
-                    "id": track["id"],
-                    "name": track["name"],
-                    "artist": track["artists"][0]["name"]
-                })
+                matches.append(
+                    {
+                        "id": track["id"],
+                        "name": track["name"],
+                        "artist": track["artists"][0]["name"],
+                    }
+                )
 
             if not matches:
                 logger.error("No valid matches found on Spotify")
@@ -91,7 +92,7 @@ class MusicFile:
             logger.error(f"Query was: {query}")
             return None
 
-    def select_match(self, sp: spotipy.Spotify, matches: list[dict]) -> Optional[str]:
+    def select_match(self, sp: spotipy.Spotify, matches: list[dict]) -> str | None:
         """Let user select a match from the list of potential matches"""
         # Show all potential matches
         logger.info("\nPotential matches from Spotify:")
@@ -101,9 +102,7 @@ class MusicFile:
 
         # Let user choose with 1 as default
         choice = (
-            input("\nSelect match number (1 is default, 's' to skip): ")
-            .strip()
-            .lower()
+            input("\nSelect match number (1 is default, 's' to skip): ").strip().lower()
         )
         if choice == "s":
             logger.warning("Track skipped")
@@ -115,7 +114,11 @@ class MusicFile:
         if choice.isdigit() and 1 <= int(choice) <= len(matches):
             track_id = matches[int(choice) - 1]["id"]
             track_info = sp.track(track_id)
-            if not track_info or not track_info.get("name") or not track_info.get("artists"):
+            if (
+                not track_info
+                or not track_info.get("name")
+                or not track_info.get("artists")
+            ):
                 logger.error("Could not get track details from Spotify")
                 return None
             logger.success(
@@ -149,7 +152,9 @@ def main() -> None:
 
     music_files: list[MusicFile] = [
         MusicFile(p)
-        for p in sorted(Path(config.media_path).glob("**/*"), key=lambda x: x.name.lower())
+        for p in sorted(
+            Path(config.media_path).glob("**/*"), key=lambda x: x.name.lower()
+        )
         if p.suffix.lower() in [".flac", ".mp3", ".m4a"]
     ]
 
@@ -159,7 +164,6 @@ def main() -> None:
         logger.warning("No local .mp3, .flac, or .m4a files found in directory")
         sys.exit(1)
 
-    total_files = len(music_files)
     tracks_added = 0
     tracks_skipped = 0
 
@@ -184,7 +188,9 @@ def main() -> None:
             track_id = music_file.select_match(sp, matches)
             if track_id:
                 if track_id in existing_tracks:
-                    logger.warning("Track already exists in Spotify playlist - skipping")
+                    logger.warning(
+                        "Track already exists in Spotify playlist - skipping"
+                    )
                     tracks_skipped += 1
                     continue
 

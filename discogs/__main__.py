@@ -17,7 +17,7 @@ def main() -> None:
     if not CONFIG_PATH.exists():
         logger.info("No config.toml file found. Let's create one!")
         config_data = {}
-        
+
         # Get media path
         questions = [
             inquirer.Text(
@@ -31,7 +31,7 @@ def main() -> None:
             logger.error("Configuration cancelled by user")
             sys.exit(1)
         config_data["media_path"] = answers["media_path"]
-        
+
         # Get Discogs token
         questions = [
             inquirer.Text(
@@ -44,17 +44,17 @@ def main() -> None:
             logger.error("Configuration cancelled by user")
             sys.exit(1)
         config_data.update(answers)
-        
+
         # Write config file
         Config.write(config_data)
         logger.info(f"Configuration saved to {CONFIG_PATH}")
-    
+
     # Initialize config
     config = Config()
-    
+
     # Initialize Discogs client
     ds = dc.Client("discogs_tag/0.5", user_token=config.token)
-    
+
     # Run tag updater
     tag_updater_main(Path(config.media_path), config, ds)
 

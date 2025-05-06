@@ -13,7 +13,7 @@ def main() -> None:
     if not CONFIG_PATH.exists():
         logger.info("No config.toml file found. Let's create one!")
         config_data = {}
-        
+
         # Get media path
         questions = [
             inquirer.Text(
@@ -27,7 +27,7 @@ def main() -> None:
             logger.error("Configuration cancelled by user")
             sys.exit(1)
         config_data["media_path"] = answers["media_path"]
-        
+
         # Get YouTube Music credentials
         questions = [
             inquirer.Text(
@@ -44,11 +44,11 @@ def main() -> None:
             logger.error("Configuration cancelled by user")
             sys.exit(1)
         config_data.update(answers)
-        
+
         # Write config file
         Config.write(config_data)
         logger.info(f"Configuration saved to {CONFIG_PATH}")
-    
+
     # Show menu
     questions = [
         inquirer.List(
@@ -56,7 +56,10 @@ def main() -> None:
             message="What would you like to do?",
             choices=[
                 ("Import tracks from Spotify playlist", "import"),
-                ("Find and remove duplicate tracks in YouTube Music playlist", "duplicates"),
+                (
+                    "Find and remove duplicate tracks in YouTube Music playlist",
+                    "duplicates",
+                ),
             ],
         ),
     ]
@@ -64,7 +67,7 @@ def main() -> None:
     if not answers:
         logger.error("No action selected")
         sys.exit(1)
-    
+
     if answers["action"] == "import":
         import_from_spotify_main()
     else:
@@ -72,4 +75,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main() 
+    main()

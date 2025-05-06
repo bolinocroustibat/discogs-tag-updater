@@ -13,13 +13,17 @@ class TrackInstance(TypedDict):
     added_at: str
 
 
-def find_duplicates(sp: spotipy.Spotify, playlist_id: str) -> dict[str, list[TrackInstance]]:
+def find_duplicates(
+    sp: spotipy.Spotify, playlist_id: str
+) -> dict[str, list[TrackInstance]]:
     """Find duplicate tracks in a playlist"""
     logger.info("Fetching playlist tracks...")
     logger.info(f"Using playlist ID: {playlist_id}")
 
     # Get all tracks from playlist
-    tracks: dict[str, list[TrackInstance]] = {}  # key: track_id, value: list of [track_info, added_at]
+    tracks: dict[
+        str, list[TrackInstance]
+    ] = {}  # key: track_id, value: list of [track_info, added_at]
     try:
         results = sp.playlist_items(
             playlist_id,
@@ -35,8 +39,10 @@ def find_duplicates(sp: spotipy.Spotify, playlist_id: str) -> dict[str, list[Tra
         try:
             batch_size = len(results["items"])
             total_tracks += batch_size
-            logger.info(f"Processing batch of {batch_size} tracks (total: {total_tracks})")
-            
+            logger.info(
+                f"Processing batch of {batch_size} tracks (total: {total_tracks})"
+            )
+
             for item in results["items"]:
                 if not item["track"]:  # Skip empty tracks
                     continue
@@ -44,13 +50,15 @@ def find_duplicates(sp: spotipy.Spotify, playlist_id: str) -> dict[str, list[Tra
                 track = item["track"]
                 track_id = track["id"]
                 artist = (
-                    track["artists"][0]["name"] if track["artists"] else "Unknown Artist"
+                    track["artists"][0]["name"]
+                    if track["artists"]
+                    else "Unknown Artist"
                 )
                 track_name = f"{track['name']} - {artist}"  # Keep for display purposes
 
                 track_instance: TrackInstance = {
                     "name": track_name,
-                    "added_at": item["added_at"]
+                    "added_at": item["added_at"],
                 }
 
                 if track_id in tracks:
@@ -74,7 +82,9 @@ def find_duplicates(sp: spotipy.Spotify, playlist_id: str) -> dict[str, list[Tra
     return duplicates
 
 
-def remove_duplicates(sp: spotipy.Spotify, playlist_id: str, duplicates: dict[str, list[TrackInstance]]) -> None:
+def remove_duplicates(
+    sp: spotipy.Spotify, playlist_id: str, duplicates: dict[str, list[TrackInstance]]
+) -> None:
     """Remove duplicate tracks keeping the oldest one"""
     if not duplicates:
         return
@@ -115,7 +125,7 @@ def main() -> None:
         return
 
     logger.info(
-        f"\nFound {sum(len(v)-1 for v in duplicates.values())} duplicate tracks:"
+        f"\nFound {sum(len(v) - 1 for v in duplicates.values())} duplicate tracks:"
     )
     for track_id, instances in duplicates.items():
         # Get the track name from the first instance (they're all the same track)

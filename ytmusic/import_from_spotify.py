@@ -1,19 +1,27 @@
 import sys
 from pathlib import Path
 import time
-from typing import Optional
 
 from ytmusicapi import YTMusic
 from tqdm import tqdm
 
-from spotify.common import Config as SpotifyConfig, setup_spotify, logger, select_playlist as select_spotify_playlist
-from ytmusic.common import Config as YTMusicConfig, setup_ytmusic, select_playlist as select_ytmusic_playlist
+from spotify.common import (
+    Config as SpotifyConfig,
+    setup_spotify,
+    logger,
+    select_playlist as select_spotify_playlist,
+)
+from ytmusic.common import (
+    Config as YTMusicConfig,
+    setup_ytmusic,
+    select_playlist as select_ytmusic_playlist,
+)
 
 spotify_config = SpotifyConfig()
 ytmusic_config = YTMusicConfig()
 
 
-def search_youtube_music(ytm: YTMusic, track_name: str, artist_name: str) -> Optional[str]:
+def search_youtube_music(ytm: YTMusic, track_name: str, artist_name: str) -> str | None:
     """Search for track on YouTube Music and return video ID if found"""
     query = f"{track_name} {artist_name}"
     logger.info(f'\nSearching YouTube Music for "{track_name} - {artist_name}"')
@@ -44,9 +52,7 @@ def search_youtube_music(ytm: YTMusic, track_name: str, artist_name: str) -> Opt
 
         # Let user choose with 1 as default
         choice = (
-            input("\nSelect match number (1 is default, 's' to skip): ")
-            .strip()
-            .lower()
+            input("\nSelect match number (1 is default, 's' to skip): ").strip().lower()
         )
         if choice == "s":
             logger.warning("Track skipped")
@@ -99,10 +105,9 @@ def main() -> None:
             track = item["track"]
             if not track.get("name") or not track.get("artists"):
                 continue
-            tracks.append({
-                "name": track["name"],
-                "artist": track["artists"][0]["name"]
-            })
+            tracks.append(
+                {"name": track["name"], "artist": track["artists"][0]["name"]}
+            )
         if results["next"]:
             results = sp.next(results)
         else:
@@ -123,7 +128,6 @@ def main() -> None:
             existing_tracks.add(track["videoId"])
 
     # Process each track
-    total_tracks = len(tracks)
     tracks_added = 0
     tracks_skipped = 0
 
@@ -135,7 +139,9 @@ def main() -> None:
 
         if video_id:
             if video_id in existing_tracks:
-                logger.warning("Track already exists in YouTube Music playlist - skipping")
+                logger.warning(
+                    "Track already exists in YouTube Music playlist - skipping"
+                )
                 tracks_skipped += 1
                 continue
 
@@ -161,4 +167,4 @@ if __name__ == "__main__":
         logger.error("Configuration file not found")
         sys.exit(1)
 
-    main() 
+    main()

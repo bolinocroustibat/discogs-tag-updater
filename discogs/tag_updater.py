@@ -4,7 +4,6 @@ import re
 import sys
 import time
 from pathlib import Path
-from typing import Optional
 
 import requests
 from colorama import Fore
@@ -230,7 +229,7 @@ class DTag:
                     _update_image(self.path, requests.get(self.image).content)
                     self.cover_updated = True
 
-    def search(self, retry: int = 3) -> Optional[bool]:
+    def search(self, retry: int = 3) -> bool | None:
         retry -= 1
         # check if track has required tags for searching
         if self.artist == "" and self.title == "":
@@ -310,7 +309,7 @@ def clean(string: str) -> str:
 def main(directory: Path, config=None, ds=None) -> None:
     if not config or not ds:
         raise ValueError("config and ds parameters are required")
-        
+
     logger.log(
         """
               @@@@@@@@@@@@
@@ -357,7 +356,7 @@ def main(directory: Path, config=None, ds=None) -> None:
         for p in Path(directory).glob("**/*")
         if p.suffix in [".flac", ".mp3", ".m4a"]
     }
-    
+
     logger.info("\nProcessing files...")
     for tag_file in tqdm(files, desc="Processing files", unit="file"):
         total += 1

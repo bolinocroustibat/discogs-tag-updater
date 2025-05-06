@@ -21,11 +21,11 @@ class Config:
     def __init__(self) -> None:
         with open(TOML_PATH, "rb") as f:
             config = tomllib.load(f)
-        
+
         # Remove escape characters from the path and convert to Path object
         raw_path = config["common"]["path"].replace("\\", "")
         self.media_path = Path(raw_path)
-        
+
         # Spotify config
         spotify_config = config["spotify"]
         self.client_id = spotify_config["client_id"]
@@ -62,7 +62,7 @@ def setup_spotify() -> spotipy.Spotify:
             redirect_uri=config.redirect_uri,
             scope=scope,
             open_browser=True,
-            cache_path=".spotify_token_cache"
+            cache_path=".spotify_token_cache",
         )
     )
 
@@ -78,7 +78,7 @@ def list_user_playlists(sp: spotipy.Spotify) -> list[PlaylistInfo]:
 
     # Filter playlists owned by user and format output
     user_playlists: list[PlaylistInfo] = []
-    
+
     # Add Liked Songs as first option
     try:
         liked_tracks = sp.current_user_saved_tracks()
@@ -104,7 +104,7 @@ def list_user_playlists(sp: spotipy.Spotify) -> list[PlaylistInfo]:
                         "track_count": playlist["tracks"]["total"],
                     }
                 )
-        
+
         # Get next page if available
         if playlists_response["next"]:
             playlists_response = sp.next(playlists_response)
@@ -121,7 +121,9 @@ def select_playlist(sp: spotipy.Spotify, playlist_id: str | None = None) -> str:
             if playlist_id == "liked":
                 # Special case for Liked Songs
                 try:
-                    sp.current_user_saved_tracks(limit=1)  # Just check if we can access liked tracks
+                    sp.current_user_saved_tracks(
+                        limit=1
+                    )  # Just check if we can access liked tracks
                     logger.success('Using Spotify playlist: "Liked Songs"')
                     return playlist_id
                 except Exception as e:
