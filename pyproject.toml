@@ -16,9 +16,14 @@ dependencies = [
     "spotipy>=2.23.0",
     "ytmusicapi>=0.23.0",
     "tqdm>=4.66.0",
+    "python-Levenshtein>=0.23.0",
 ]
 requires-python = ">=3.7,<4.0"
 license = { text = "MIT" }
+
+[project.scripts]
+music-sync-toolbox = "main:main"
+music-sync = "main:main"
 
 [tool]
 rye = { dev-dependencies = [

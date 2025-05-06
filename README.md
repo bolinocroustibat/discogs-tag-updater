@@ -20,12 +20,22 @@ A CLI toolbox for syncing your music across Spotify, YouTube Music and you local
 uv sync
 ```
 
+## Usage
+```sh
+uv run music-sync
+```
+
+This will show a menu with the different features available.
+
 ## Config
 On the first run, it will ask for some inputs. You can change these variables after in the `config.toml` file, following the `config.toml.example` file.
 
 ### Common Setup
 `path`  
-The path to your music files directory.
+The path to your music files directory. This is only required for:
+- Discogs tag updates
+- File renaming
+- Adding local files to Spotify playlist
 
 ### Discogs (💿) Setup
 For the discogs access token, you can create one [here](https://www.discogs.com/settings/developers).
@@ -54,7 +64,7 @@ You can choose between two authentication methods:
 
 ### Common Options
 `path`  
-The path to your music files directory.
+The path to your music files directory. Only required for features that work with local files.
 
 ### Discogs (💿) Options
 `token`  
@@ -102,63 +112,6 @@ Your YouTube Music OAuth client secret (only needed for OAuth method).
 
 `playlist_id`  
 The ID of the playlist where you want to add tracks. If not set, you'll be prompted to select a playlist when running the script.
-
-## Scripts
-
-### Discogs (💿) Tag Updater
-
-Forked from https://notabug.org/Aesir.
-
-Updates genre, year and image of .mp3 and .flac files based on title and artist using the Discogs database, and rename the file based on the title and artist.
-
-#### How to run
-
-Updates your music files with metadata from Discogs:
-```sh
-uv run discogs
-```
-
-This will show a menu with the following options:
-- 💿✏️🏷️ Update ID3 tags of the local files using Discogs
-- 💿✏️📁 Rename files using their ID3 tags
-- 💿✏️🏷️➡️📁 Update ID3 tags and rename files
-
-#### See it in action
-[https://youtu.be/mWQZJS94p40](https://youtu.be/mWQZJS94p40)  
-Thanks to Bas Curtiz for creating the video.
-
-### Spotify (🟢) utilities
-
-The first time you run the Spotify script, it will:
-1. Open your browser
-2. Ask you to log in to Spotify
-3. Request permission to modify your playlists
-4. Save the authentication token locally for future use
-
-#### How to run
-
-```sh
-uv run spotify
-```
-
-This will show a menu with the following options:
-- 🟢➕ Add local files to Spotify playlist
-- 🔴➡️🟢 Import tracks from YouTube Music playlist to Spotify Playlist
-- 🟢🧹 Find and remove duplicate tracks in Spotify playlist
-
-### YouTube Music (🔴) utilities
-
-#### How to run
-
-```sh
-uv run ytmusic
-```
-
-This will show a menu with the following options:
-- 🟢➡️🔴 Import tracks from Spotify playlist to YouTube Music Playlist
-- 🔴🧹 Find and remove duplicate tracks in YouTube Music playlist
-
-For each track found, you'll be prompted to confirm whether you want to add it to your playlist.
 
 ## TODO
 

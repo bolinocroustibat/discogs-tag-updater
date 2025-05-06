@@ -24,9 +24,11 @@ class Config:
         with open(TOML_PATH, "rb") as f:
             config = tomllib.load(f)
 
-        # Remove escape characters from the path and convert to Path object
-        raw_path = config["common"]["path"].replace("\\", "")
-        self.media_path = Path(raw_path)
+        # Get media path from common section, default to None if not found
+        self.media_path = None
+        if "common" in config and "path" in config["common"]:
+            raw_path = config["common"]["path"].replace("\\", "")
+            self.media_path = Path(raw_path)
 
         # YouTube Music config
         ytmusic_config = config["ytmusic"]
