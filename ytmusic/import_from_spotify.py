@@ -4,6 +4,7 @@ import time
 
 from ytmusicapi import YTMusic
 from tqdm import tqdm
+import spotipy
 
 from spotify.common import (
     Config as SpotifyConfig,
@@ -21,7 +22,9 @@ spotify_config = SpotifyConfig()
 ytmusic_config = YTMusicConfig()
 
 
-def search_youtube_music(ytm: YTMusic, track_name: str, artist_name: str, auto_first: bool = False) -> str | None:
+def search_youtube_music(
+    ytm: YTMusic, track_name: str, artist_name: str, auto_first: bool = False
+) -> str | None:
     """Search for track on YouTube Music and return video ID if found"""
     query = f"{track_name} {artist_name}"
     logger.info(f'\nSearching YouTube Music for "{track_name} - {artist_name}"')
@@ -55,11 +58,19 @@ def search_youtube_music(ytm: YTMusic, track_name: str, artist_name: str, auto_f
             choice = "1"
         else:
             choice = (
-                input("\nSelect match number (1 is default, 's' to skip, 'a' for auto-first): ").strip().lower()
+                input(
+                    "\nSelect match number (1 is default, 's' to skip, 'a' for auto-first): "
+                )
+                .strip()
+                .lower()
             )
             if choice == "a":
-                logger.info("Auto-first mode enabled - will select first match for all remaining tracks")
-                return search_youtube_music(ytm, track_name, artist_name, auto_first=True)
+                logger.info(
+                    "Auto-first mode enabled - will select first match for all remaining tracks"
+                )
+                return search_youtube_music(
+                    ytm, track_name, artist_name, auto_first=True
+                )
 
         if choice == "s":
             logger.warning("Track skipped")
@@ -92,20 +103,8 @@ def search_youtube_music(ytm: YTMusic, track_name: str, artist_name: str, auto_f
             return None
 
 
-def main() -> None:
-    # Initialize YouTube Music client
-    ytm = setup_ytmusic()
-
-    # Get YouTube Music playlist ID from config or user selection
-    ytmusic_playlist_id = select_ytmusic_playlist(ytm, ytmusic_config.playlist_id)
-
-    # Initialize Spotify client
-    sp = setup_spotify()
-
-    # Get Spotify playlist ID from config or user selection
-    spotify_playlist_id = select_spotify_playlist(sp, spotify_config.playlist_id)
-
-    # Get tracks from Spotify playlist
+def get_spotify_tracks(sp: spotipy.Spotify, spotify_playlist_id: str) -> list[dict]:
+    """Get tracks from Spotify playlist"""
     logger.info(f'Fetching tracks from Spotify playlist "{spotify_playlist_id}"...')
     tracks: list[dict] = []
     try:
@@ -152,16 +151,66 @@ def main() -> None:
         sys.exit(1)
 
     logger.info(f"Found {len(tracks)} tracks in Spotify playlist")
+    return tracks
 
-    # Get existing tracks in YouTube Music playlist
+
+def get_existing_ytmusic_tracks(ytm: YTMusic, ytmusic_playlist_id: str) -> set[str]:
+    """Get existing tracks in YouTube Music playlist"""
     logger.info("Fetching existing tracks from YouTube Music playlist...")
     existing_tracks: set[str] = set()
     results = ytm.get_playlist(ytmusic_playlist_id)
     for track in results["tracks"]:
         if track.get("videoId"):
             existing_tracks.add(track["videoId"])
+    return existing_tracks
 
-    # Process each track
+
+def add_track_to_ytmusic(
+    ytm: YTMusic,
+    video_id: str,
+    ytmusic_playlist_id: str,
+    retry_delay: int,
+) -> tuple[bool, int]:
+    """Add track to YouTube Music playlist with retry logic"""
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            if ytmusic_playlist_id == "LM":
+                # Special case for Liked Music - use rate_song instead of add_playlist_items
+                ytm.rate_song(video_id, "LIKE")
+            else:
+                # Regular playlist
+                ytm.add_playlist_items(ytmusic_playlist_id, [video_id])
+            logger.success("Track added to YouTube Music playlist.")
+            time.sleep(2)  # Increased delay between requests
+            return True, retry_delay
+        except Exception as e:
+            if "rate/request limit" in str(e).lower():
+                if attempt < max_retries - 1:
+                    logger.warning(
+                        f"Rate limit reached. Waiting {retry_delay} seconds before retry..."
+                    )
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                    continue
+                else:
+                    logger.error("Max retries reached for rate limit. Skipping track.")
+                    return False, retry_delay
+            else:
+                logger.error(f"Error adding to YouTube Music playlist: {e}")
+                logger.error(f"Video ID: {video_id}")
+                logger.error(f"Playlist ID: {ytmusic_playlist_id}")
+                return False, retry_delay
+    return False, retry_delay
+
+
+def process_tracks(
+    ytm: YTMusic,
+    tracks: list[dict],
+    existing_tracks: set[str],
+    ytmusic_playlist_id: str,
+) -> tuple[int, int]:
+    """Process all tracks and return counts of added and skipped tracks"""
     tracks_added = 0
     tracks_skipped = 0
     auto_first = False
@@ -173,7 +222,9 @@ def main() -> None:
         artist_name = track["artist"]
 
         # Define search function with access to auto_first
-        def search_with_auto_first(ytm: YTMusic, track_name: str, artist_name: str) -> str | None:
+        def search_with_auto_first(
+            ytm: YTMusic, track_name: str, artist_name: str
+        ) -> str | None:
             nonlocal auto_first, retry_delay
             query = f"{track_name} {artist_name}"
             logger.info(f'\nSearching YouTube Music for "{track_name} - {artist_name}"')
@@ -181,7 +232,9 @@ def main() -> None:
             max_retries = 3
             for attempt in range(max_retries):
                 try:
-                    results = ytm.search(query, filter="songs", limit=5)  # Show only top 5 matches
+                    results = ytm.search(
+                        query, filter="songs", limit=5
+                    )  # Show only top 5 matches
                     results = results[:5]  # Explicitly limit to 5 results
                     if not results:
                         logger.error("No matches found on YouTube Music")
@@ -209,10 +262,16 @@ def main() -> None:
                         choice = "1"
                     else:
                         choice = (
-                            input("\nSelect match number (1 is default, 's' to skip, 'a' for auto-first): ").strip().lower()
+                            input(
+                                "\nSelect match number (1 is default, 's' to skip, 'a' for auto-first): "
+                            )
+                            .strip()
+                            .lower()
                         )
                         if choice == "a":
-                            logger.info("Auto-first mode enabled - will select first match for all remaining tracks")
+                            logger.info(
+                                "Auto-first mode enabled - will select first match for all remaining tracks"
+                            )
                             auto_first = True
                             choice = "1"
 
@@ -227,7 +286,9 @@ def main() -> None:
                         video_id = matches[int(choice) - 1]
                         track_info = ytm.get_song(video_id)
                         if not track_info or not track_info.get("videoDetails"):
-                            logger.error("Could not get track details from YouTube Music")
+                            logger.error(
+                                "Could not get track details from YouTube Music"
+                            )
                             return None
                         logger.success(
                             f'Selected from YouTube Music: "{track_info["videoDetails"]["title"]} - {track_info["videoDetails"]["author"]}"'
@@ -240,12 +301,16 @@ def main() -> None:
                 except Exception as e:
                     if "rate/request limit" in str(e).lower():
                         if attempt < max_retries - 1:
-                            logger.warning(f"Rate limit reached. Waiting {retry_delay} seconds before retry...")
+                            logger.warning(
+                                f"Rate limit reached. Waiting {retry_delay} seconds before retry..."
+                            )
                             time.sleep(retry_delay)
                             retry_delay *= 2  # Exponential backoff
                             continue
                         else:
-                            logger.error("Max retries reached for rate limit. Skipping track.")
+                            logger.error(
+                                "Max retries reached for rate limit. Skipping track."
+                            )
                             return None
                     else:
                         logger.error(f"Error searching YouTube Music: {e}")
@@ -264,38 +329,42 @@ def main() -> None:
                 tracks_skipped += 1
                 continue
 
-            max_retries = 3
-            for attempt in range(max_retries):
-                try:
-                    if ytmusic_playlist_id == "LM":
-                        # Special case for Liked Music - use rate_song instead of add_playlist_items
-                        ytm.rate_song(video_id, "LIKE")
-                    else:
-                        # Regular playlist
-                        ytm.add_playlist_items(ytmusic_playlist_id, [video_id])
-                    logger.success("Track added to YouTube Music playlist.")
-                    tracks_added += 1
-                    time.sleep(2)  # Increased delay between requests
-                    break
-                except Exception as e:
-                    if "rate/request limit" in str(e).lower():
-                        if attempt < max_retries - 1:
-                            logger.warning(f"Rate limit reached. Waiting {retry_delay} seconds before retry...")
-                            time.sleep(retry_delay)
-                            retry_delay *= 2  # Exponential backoff
-                            continue
-                        else:
-                            logger.error("Max retries reached for rate limit. Skipping track.")
-                            tracks_skipped += 1
-                            break
-                    else:
-                        logger.error(f"Error adding to YouTube Music playlist: {e}")
-                        logger.error(f"Video ID: {video_id}")
-                        logger.error(f"Playlist ID: {ytmusic_playlist_id}")
-                        tracks_skipped += 1
-                        break
+            success, retry_delay = add_track_to_ytmusic(
+                ytm, video_id, ytmusic_playlist_id, retry_delay
+            )
+            if success:
+                tracks_added += 1
+            else:
+                tracks_skipped += 1
         else:
             tracks_skipped += 1
+
+    return tracks_added, tracks_skipped
+
+
+def main() -> None:
+    # Initialize YouTube Music client
+    ytm = setup_ytmusic()
+
+    # Get YouTube Music playlist ID from config or user selection
+    ytmusic_playlist_id = select_ytmusic_playlist(ytm, ytmusic_config.playlist_id)
+
+    # Initialize Spotify client
+    sp = setup_spotify()
+
+    # Get Spotify playlist ID from config or user selection
+    spotify_playlist_id = select_spotify_playlist(sp, spotify_config.playlist_id)
+
+    # Get tracks from Spotify playlist
+    tracks = get_spotify_tracks(sp, spotify_playlist_id)
+
+    # Get existing tracks in YouTube Music playlist
+    existing_tracks = get_existing_ytmusic_tracks(ytm, ytmusic_playlist_id)
+
+    # Process tracks
+    tracks_added, tracks_skipped = process_tracks(
+        ytm, tracks, existing_tracks, ytmusic_playlist_id
+    )
 
     # Print summary
     logger.info("\nSummary:")

@@ -22,7 +22,9 @@ def find_duplicates(
 
     # Special case for Liked Songs
     if playlist_id == "liked":
-        logger.info("Note: Liked Songs cannot contain duplicates by design - Spotify automatically prevents this.")
+        logger.info(
+            "Note: Liked Songs cannot contain duplicates by design - Spotify automatically prevents this."
+        )
         return {}
 
     # Get all tracks from playlist

@@ -56,7 +56,7 @@ def setup_spotify() -> spotipy.Spotify:
     logger.info(f"Using client_id: {config.client_id}")
     logger.info(f"Using redirect_uri: {config.redirect_uri}")
     logger.info(f"Using scopes: {scope}")
-    
+
     try:
         sp = spotipy.Spotify(
             auth_manager=SpotifyOAuth(
@@ -123,8 +123,12 @@ def list_user_playlists(sp: spotipy.Spotify) -> list[PlaylistInfo]:
 
     # Sort playlists alphabetically, keeping Liked Songs first
     regular_playlists = user_playlists[1:]  # All playlists except Liked Songs
-    sorted_regular_playlists = sorted(regular_playlists, key=lambda x: x["name"].lower())
-    return [user_playlists[0]] + sorted_regular_playlists  # Liked Songs + sorted regular playlists
+    sorted_regular_playlists = sorted(
+        regular_playlists, key=lambda x: x["name"].lower()
+    )
+    return [
+        user_playlists[0]
+    ] + sorted_regular_playlists  # Liked Songs + sorted regular playlists
 
 
 def select_playlist(sp: spotipy.Spotify, playlist_id: str | None = None) -> str:
