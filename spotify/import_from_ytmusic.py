@@ -116,7 +116,7 @@ def main() -> None:
     spotify_playlist_id = select_spotify_playlist(sp, spotify_config.playlist_id)
 
     # Get tracks from YouTube Music playlist
-    logger.info("Fetching tracks from YouTube Music playlist...")
+    logger.info(f'Fetching tracks from YouTube Music playlist "{ytmusic_playlist_id}"...')
     tracks: list[dict] = []
     try:
         if ytmusic_playlist_id == "LM":

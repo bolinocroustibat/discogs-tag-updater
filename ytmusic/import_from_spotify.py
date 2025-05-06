@@ -34,7 +34,7 @@ def search_youtube_music(ytm: YTMusic, track_name: str, artist_name: str) -> str
             return None
 
         # Show all potential matches
-        logger.info("\nPotential matches from YouTube Music:")
+        logger.info("\nPotential matches on YouTube Music:")
         matches: list[str] = []
         for i, track in enumerate(results, 1):
             if not track.get("title") or not track.get("artists"):
@@ -76,9 +76,13 @@ def search_youtube_music(ytm: YTMusic, track_name: str, artist_name: str) -> str
         return None
 
     except Exception as e:
-        logger.error(f"Error searching YouTube Music: {e}")
-        logger.error(f"Query was: {query}")
-        return None
+        if "rate/request limit" in str(e).lower():
+            logger.error("Rate limit reached for YouTube Music")
+            return None
+        else:
+            logger.error(f"Error searching YouTube Music: {e}")
+            logger.error(f"Query was: {query}")
+            return None
 
 
 def main() -> None:
@@ -95,23 +99,46 @@ def main() -> None:
     ytmusic_playlist_id = select_ytmusic_playlist(ytm, ytmusic_config.playlist_id)
 
     # Get tracks from Spotify playlist
-    logger.info("Fetching tracks from Spotify playlist...")
+    logger.info(f'Fetching tracks from Spotify playlist "{spotify_playlist_id}"...')
     tracks: list[dict] = []
-    results = sp.playlist_items(spotify_playlist_id)
-    while results:
-        for item in results["items"]:
-            if not item.get("track"):
-                continue
-            track = item["track"]
-            if not track.get("name") or not track.get("artists"):
-                continue
-            tracks.append(
-                {"name": track["name"], "artist": track["artists"][0]["name"]}
-            )
-        if results["next"]:
-            results = sp.next(results)
+    try:
+        if spotify_playlist_id == "liked":
+            # Special case for Liked Songs
+            results = sp.current_user_saved_tracks()
+            while results:
+                for item in results["items"]:
+                    if not item.get("track"):
+                        continue
+                    track = item["track"]
+                    if not track.get("name") or not track.get("artists"):
+                        continue
+                    tracks.append(
+                        {"name": track["name"], "artist": track["artists"][0]["name"]}
+                    )
+                if results["next"]:
+                    results = sp.next(results)
+                else:
+                    break
         else:
-            break
+            # Regular playlist
+            results = sp.playlist_items(spotify_playlist_id)
+            while results:
+                for item in results["items"]:
+                    if not item.get("track"):
+                        continue
+                    track = item["track"]
+                    if not track.get("name") or not track.get("artists"):
+                        continue
+                    tracks.append(
+                        {"name": track["name"], "artist": track["artists"][0]["name"]}
+                    )
+                if results["next"]:
+                    results = sp.next(results)
+                else:
+                    break
+    except Exception as e:
+        logger.error(f"Error fetching Spotify playlist: {e}")
+        sys.exit(1)
 
     if not tracks:
         logger.warning("No tracks found in Spotify playlist")
@@ -145,14 +172,39 @@ def main() -> None:
                 tracks_skipped += 1
                 continue
 
-            try:
-                ytm.add_playlist_items(ytmusic_playlist_id, [video_id])
-                logger.success("Track added to YouTube Music playlist")
-                tracks_added += 1
-                time.sleep(1)  # Rate limiting
-            except Exception as e:
-                logger.error(f"Error adding to YouTube Music playlist: {e}")
-                tracks_skipped += 1
+            max_retries = 3
+            retry_delay = 5  # seconds
+
+            for attempt in range(max_retries):
+                try:
+                    if ytmusic_playlist_id == "LM":
+                        # Special case for Liked Music - use rate_song instead of add_playlist_items
+                        ytm.rate_song(video_id, "LIKE")
+                    else:
+                        # Regular playlist
+                        logger.info(f"Using add_playlist_items for regular playlist {ytmusic_playlist_id} with video_id: {video_id}")
+                        ytm.add_playlist_items(ytmusic_playlist_id, [video_id])
+                    logger.success("Track added to YouTube Music playlist")
+                    tracks_added += 1
+                    time.sleep(1)  # Rate limiting
+                    break
+                except Exception as e:
+                    if "rate/request limit" in str(e).lower():
+                        if attempt < max_retries - 1:
+                            logger.warning(f"Rate limit reached. Waiting {retry_delay} seconds before retry...")
+                            time.sleep(retry_delay)
+                            retry_delay *= 2  # Exponential backoff
+                            continue
+                        else:
+                            logger.error("Max retries reached for rate limit. Skipping track.")
+                            tracks_skipped += 1
+                            break
+                    else:
+                        logger.error(f"Error adding to YouTube Music playlist: {e}")
+                        logger.error(f"Video ID: {video_id}")
+                        logger.error(f"Playlist ID: {ytmusic_playlist_id}")
+                        tracks_skipped += 1
+                        break
         else:
             tracks_skipped += 1
 
