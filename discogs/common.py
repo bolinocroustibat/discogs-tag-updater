@@ -3,7 +3,7 @@ from pathlib import Path
 from logger import FileLogger
 
 TOML_PATH = "config.toml"
-logger = FileLogger("discogs.log")
+logger = FileLogger("discogs/discogs.log")
 
 
 class Config:

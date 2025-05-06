@@ -8,7 +8,7 @@ import tomllib
 from logger import FileLogger
 
 TOML_PATH = "config.toml"
-logger = FileLogger("spotify.log")
+logger = FileLogger("spotify/spotify.log")
 
 
 class PlaylistInfo(TypedDict):

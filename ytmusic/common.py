@@ -10,7 +10,7 @@ from logger import FileLogger
 TOML_PATH = "config.toml"
 OAUTH_PATH = Path("ytmusic") / "oauth.json"
 BROWSER_PATH = Path("ytmusic") / "browser.json"
-logger = FileLogger("ytmusic.log")
+logger = FileLogger("ytmusic/ytmusic.log")
 
 
 class PlaylistInfo(TypedDict):
