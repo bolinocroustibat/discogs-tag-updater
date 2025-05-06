@@ -10,13 +10,15 @@ from mutagen.mp4 import MP4
 
 from spotify.common import Config, setup_spotify, logger, select_playlist
 
+config = Config()
+
 
 class MusicFile:
     def __init__(self, path: Path) -> None:
-        self.path = path
-        self.suffix = path.suffix
-        self.artist = ""
-        self.title = ""
+        self.path: Path = path
+        self.suffix: str = path.suffix
+        self.artist: str = ""
+        self.title: str = ""
         self._get_tags()
 
     def _get_tags(self) -> None:
@@ -48,11 +50,11 @@ class MusicFile:
     def search_spotify(self, sp: spotipy.Spotify) -> Optional[str]:
         """Search for track on Spotify and return track ID if found"""
         if not self.artist or not self.title:
-            logger.error(f"Missing tags for {self.path.name}")
+            logger.error(f"Missing tags for local file {self.path.name}")
             return None
 
         query = f"track:{self.title} artist:{self.artist}"
-        logger.info(f'\nFile: "{self.path.name}"')
+        logger.info(f'\nLocal file: "{self.path.name}"')
         logger.info(f'Searching Spotify for "{self.title} - {self.artist}"')
 
         try:
@@ -66,19 +68,20 @@ class MusicFile:
                 return None
 
             # Show all potential matches
-            logger.info("\nPotential matches:")
-            matches = []
+            logger.info("\nPotential matches from Spotify:")
+            matches: list[str] = []
             for i, track in enumerate(results["tracks"]["items"], 1):
                 if not track.get("name") or not track.get("artists"):
                     continue
 
                 artist_name = track["artists"][0]["name"]
                 track_name = track["name"]
-                logger.info(f"{i}. {track_name} - {artist_name}")
+                logger.info(f"{i}. Track: {track_name}")
+                logger.info(f"   Artist: {artist_name}")
                 matches.append(track["id"])
 
             if not matches:
-                logger.error("No valid matches found")
+                logger.error("No valid matches found on Spotify")
                 return None
 
             # Let user choose with 1 as default
@@ -97,8 +100,11 @@ class MusicFile:
             if choice.isdigit() and 1 <= int(choice) <= len(matches):
                 track_id = matches[int(choice) - 1]
                 track_info = sp.track(track_id)
+                if not track_info or not track_info.get("name") or not track_info.get("artists"):
+                    logger.error("Could not get track details from Spotify")
+                    return None
                 logger.success(
-                    f'Selected: "{track_info["name"]} - {track_info["artists"][0]["name"]}"'
+                    f'Selected from Spotify: "{track_info["name"]} - {track_info["artists"][0]["name"]}"'
                 )
                 return track_id
 
@@ -119,28 +125,28 @@ def main() -> None:
     playlist_id = select_playlist(sp, config.playlist_id)
 
     # Scan directory for music files
-    logger.info(f"Scanning directory: {config.media_path}")
+    logger.info(f"Scanning local directory: {config.media_path}")
 
     # Debug: Check if path exists
     if not config.media_path.exists():
-        logger.error(f"Directory does not exist: {config.media_path}")
+        logger.error(f"Local directory does not exist: {config.media_path}")
         sys.exit(1)
 
     # Debug: List all files in directory
-    logger.info("Files found in directory:")
-    for p in Path(config.media_path).glob("**/*"):
-        logger.info(f"Found file: {p.name} (suffix: {p.suffix})")
+    logger.info("Local files found in directory:")
+    for p in sorted(Path(config.media_path).glob("**/*"), key=lambda x: x.name.lower()):
+        logger.info(f"Found local file: {p.name} (suffix: {p.suffix})")
 
-    music_files = [
+    music_files: list[MusicFile] = [
         MusicFile(p)
-        for p in Path(config.media_path).glob("**/*")
+        for p in sorted(Path(config.media_path).glob("**/*"), key=lambda x: x.name.lower())
         if p.suffix.lower() in [".flac", ".mp3", ".m4a"]
     ]
 
-    logger.info(f"Number of music files found: {len(music_files)}")
+    logger.info(f"Number of local music files found: {len(music_files)}")
 
     if not music_files:
-        logger.warning("No .mp3, .flac, or .m4a files found in directory")
+        logger.warning("No local .mp3, .flac, or .m4a files found in directory")
         sys.exit(1)
 
     total_files = len(music_files)
@@ -148,7 +154,7 @@ def main() -> None:
     tracks_skipped = 0
 
     # Get existing tracks in playlist
-    existing_tracks = set()
+    existing_tracks: set[str] = set()
     results = sp.playlist_items(playlist_id)
     while results:
         for item in results["items"]:
@@ -161,35 +167,30 @@ def main() -> None:
 
     # Process each music file
     for index, music_file in enumerate(music_files, 1):
-        logger.info(f"\nProcessing file {index}/{total_files}")
+        logger.info(f"\nProcessing local file {index}/{total_files}")
         track_id = music_file.search_spotify(sp)
         if track_id:
             if track_id in existing_tracks:
-                logger.warning("Track already exists in playlist - skipping")
+                logger.warning("Track already exists in Spotify playlist - skipping")
                 tracks_skipped += 1
                 continue
 
             try:
                 sp.playlist_add_items(playlist_id, [track_id])
-                logger.success("Track added to playlist")
+                logger.success("Track added to Spotify playlist")
                 tracks_added += 1
                 time.sleep(1)  # Rate limiting
             except Exception as e:
-                logger.error(f"Error adding to playlist: {e}")
+                logger.error(f"Error adding to Spotify playlist: {e}")
                 tracks_skipped += 1
         else:
             tracks_skipped += 1
 
     # Print summary
     logger.info("\nSummary:")
-    logger.success(f"Tracks added: {tracks_added}")
+    logger.success(f"Tracks added to Spotify: {tracks_added}")
     logger.warning(f"Tracks skipped: {tracks_skipped}")
 
 
 if __name__ == "__main__":
-    if not Path("config.ini").is_file():
-        logger.error("Configuration file not found")
-        sys.exit(1)
-
-    config = Config()
     main()

@@ -1,59 +1,92 @@
 import sys
 import time
 from pathlib import Path
+from typing import TypedDict
 
 import spotipy
 
 from spotify.common import setup_spotify, logger, select_playlist
 
 
-def find_duplicates(sp: spotipy.Spotify, playlist_id: str) -> dict:
+class TrackInstance(TypedDict):
+    name: str
+    added_at: str
+
+
+def find_duplicates(sp: spotipy.Spotify, playlist_id: str) -> dict[str, list[TrackInstance]]:
     """Find duplicate tracks in a playlist"""
     logger.info("Fetching playlist tracks...")
+    logger.info(f"Using playlist ID: {playlist_id}")
 
     # Get all tracks from playlist
-    tracks = {}  # key: track_id, value: list of [track_info, added_at]
-    results = sp.playlist_items(
-        playlist_id,
-        fields="items.track.id,items.track.name,items.track.artists,items.added_at,next",
-    )
+    tracks: dict[str, list[TrackInstance]] = {}  # key: track_id, value: list of [track_info, added_at]
+    try:
+        results = sp.playlist_items(
+            playlist_id,
+            fields="items.track.id,items.track.name,items.track.artists,items.added_at,next",
+        )
+        logger.info("Successfully connected to Spotify API")
+    except Exception as e:
+        logger.error(f"Error fetching playlist items: {e}")
+        return {}
 
+    total_tracks = 0
     while results:
-        for item in results["items"]:
-            if not item["track"]:  # Skip empty tracks
-                continue
+        try:
+            batch_size = len(results["items"])
+            total_tracks += batch_size
+            logger.info(f"Processing batch of {batch_size} tracks (total: {total_tracks})")
+            
+            for item in results["items"]:
+                if not item["track"]:  # Skip empty tracks
+                    continue
 
-            track = item["track"]
-            track_id = track["id"]
-            artist = (
-                track["artists"][0]["name"] if track["artists"] else "Unknown Artist"
-            )
-            track_name = f"{track['name']} - {artist}"  # Keep for display purposes
-
-            if track_id in tracks:
-                tracks[track_id].append(
-                    {"name": track_name, "added_at": item["added_at"]}
+                track = item["track"]
+                track_id = track["id"]
+                artist = (
+                    track["artists"][0]["name"] if track["artists"] else "Unknown Artist"
                 )
+                track_name = f"{track['name']} - {artist}"  # Keep for display purposes
+
+                track_instance: TrackInstance = {
+                    "name": track_name,
+                    "added_at": item["added_at"]
+                }
+
+                if track_id in tracks:
+                    tracks[track_id].append(track_instance)
+                else:
+                    tracks[track_id] = [track_instance]
+
+            if results["next"]:
+                logger.info("Fetching next batch of tracks...")
+                results = sp.next(results)
             else:
-                tracks[track_id] = [{"name": track_name, "added_at": item["added_at"]}]
+                logger.info("Finished fetching all tracks")
+                break
+        except Exception as e:
+            logger.error(f"Error processing batch: {e}")
+            break
 
     # Filter only duplicates
     duplicates = {k: v for k, v in tracks.items() if len(v) > 1}
+    logger.info(f"Found {len(duplicates)} tracks with duplicates")
     return duplicates
 
 
-def remove_duplicates(sp: spotipy.Spotify, playlist_id: str, duplicates: dict) -> None:
+def remove_duplicates(sp: spotipy.Spotify, playlist_id: str, duplicates: dict[str, list[TrackInstance]]) -> None:
     """Remove duplicate tracks keeping the oldest one"""
     if not duplicates:
         return
 
-    tracks_to_remove = []
-    for track_name, instances in duplicates.items():
+    tracks_to_remove: list[str] = []
+    for track_id, instances in duplicates.items():
         # Sort by added_at date in ascending order (oldest first, newest last)
         sorted_by_date = sorted(instances, key=lambda x: x["added_at"])
         # Keep the first (oldest) track and remove all newer duplicates
         newest_duplicates = sorted_by_date[1:]
-        tracks_to_remove.extend([t["id"] for t in newest_duplicates])
+        # Add the track ID for each duplicate instance
+        tracks_to_remove.extend([track_id] * len(newest_duplicates))
 
     if tracks_to_remove:
         try:
@@ -84,7 +117,9 @@ def main() -> None:
     logger.info(
         f"\nFound {sum(len(v)-1 for v in duplicates.values())} duplicate tracks:"
     )
-    for track_name, instances in duplicates.items():
+    for track_id, instances in duplicates.items():
+        # Get the track name from the first instance (they're all the same track)
+        track_name = instances[0]["name"]
         logger.info(f"\n{track_name}")
         for i, track in enumerate(sorted(instances, key=lambda x: x["added_at"]), 1):
             logger.info(f"  {i}. Added on: {track['added_at']}")

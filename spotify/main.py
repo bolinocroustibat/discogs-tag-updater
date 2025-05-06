@@ -15,12 +15,14 @@ def main() -> None:
             message="What would you like to do?",
             choices=[
                 ("Add local files to Spotify playlist", "add"),
-                ("Find and remove duplicate tracks", "duplicates"),
+                ("Find and remove duplicate tracks in Spotify playlist", "duplicates"),
             ],
         )
     ]
 
     answers = inquirer.prompt(questions)
+    if not answers:  # User pressed Ctrl+C
+        raise KeyboardInterrupt("Action selection cancelled")
 
     if answers["action"] == "add":
         add_tracks_main()
