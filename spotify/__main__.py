@@ -5,6 +5,7 @@ import inquirer
 from spotify.common import Config, logger
 from spotify.add_tracks import main as add_tracks_main
 from spotify.manage_duplicates import main as manage_duplicates_main
+from spotify.import_from_ytmusic import main as import_from_ytmusic_main
 
 CONFIG_PATH = Path("config.toml")
 
@@ -13,7 +14,7 @@ def main() -> None:
     if not CONFIG_PATH.exists():
         logger.info("No config.toml file found. Let's create one!")
         config_data = {}
-        
+
         # Get media path
         questions = [
             inquirer.Text(
@@ -27,7 +28,7 @@ def main() -> None:
             logger.error("Configuration cancelled by user")
             sys.exit(1)
         config_data["media_path"] = answers["media_path"]
-        
+
         # Get Spotify credentials
         questions = [
             inquirer.Text(
@@ -49,11 +50,11 @@ def main() -> None:
             logger.error("Configuration cancelled by user")
             sys.exit(1)
         config_data.update(answers)
-        
+
         # Write config file
         Config.write(config_data)
         logger.info(f"Configuration saved to {CONFIG_PATH}")
-    
+
     # Show menu
     questions = [
         inquirer.List(
@@ -62,6 +63,7 @@ def main() -> None:
             choices=[
                 ("Add local files to Spotify playlist", "add"),
                 ("Find and remove duplicate tracks in Spotify playlist", "duplicates"),
+                ("Import tracks from YouTube Music playlist", "import"),
             ],
         ),
     ]
@@ -69,12 +71,14 @@ def main() -> None:
     if not answers:
         logger.error("No action selected")
         sys.exit(1)
-    
+
     if answers["action"] == "add":
         add_tracks_main()
-    else:
+    elif answers["action"] == "duplicates":
         manage_duplicates_main()
+    else:
+        import_from_ytmusic_main()
 
 
 if __name__ == "__main__":
-    main() 
+    main()
