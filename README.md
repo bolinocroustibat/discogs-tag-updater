@@ -30,14 +30,14 @@ This will show a menu with the different features available.
 ## Config
 On the first run, it will ask for some inputs. You can change these variables after in the `config.toml` file, following the `config.toml.example` file.
 
-### Common Setup
-`path`  
+### Local Files Setup
+`path`
 The path to your music files directory. This is only required for:
 - Local file tag updates from Discogs
 - File renaming based on tags
 - Adding local files to Spotify playlist
 
-### Local Files Setup
+### Discogs Setup
 For the discogs access token, you can create one [here](https://www.discogs.com/settings/developers).
 
 ### Spotify Setup
@@ -114,12 +114,6 @@ Your YouTube Music OAuth client secret (only needed for OAuth method).
 The ID of the playlist where you want to add tracks. If not set, you'll be prompted to select a playlist when running the script.
 
 ## TODO
-
-### Common Improvements
-- Ask user for local path if not provided in `config.toml` for:
-  - Local file tag updates from Discogs
-  - Spotify (🟢) utilities
-  - YouTube Music (🔴) utilities
 
 ### Spotify (🟢) Improvements
 - In `spotify/add_tracks.py`: Compare Spotify matches with local files BEFORE asking user for match selection
