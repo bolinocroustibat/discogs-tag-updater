@@ -20,11 +20,17 @@ def find_duplicates(
     logger.info("Fetching playlist tracks...")
     logger.info(f"Using playlist ID: {playlist_id}")
 
+    # Special case for Liked Songs
+    if playlist_id == "liked":
+        logger.info("Note: Liked Songs cannot contain duplicates by design - Spotify automatically prevents this.")
+        return {}
+
     # Get all tracks from playlist
     tracks: dict[
         str, list[TrackInstance]
     ] = {}  # key: track_id, value: list of [track_info, added_at]
     try:
+        # Regular playlist
         results = sp.playlist_items(
             playlist_id,
             fields="items.track.id,items.track.name,items.track.artists,items.added_at,next",

@@ -51,20 +51,30 @@ class Config:
 def setup_spotify() -> spotipy.Spotify:
     """Initialize Spotify client with proper permissions"""
     config = Config()
-    scope = "playlist-modify-public playlist-modify-private playlist-read-private user-library-read"
+    scope = "playlist-modify-public playlist-modify-private playlist-read-private user-library-read user-library-modify"
     logger.info("Initializing Spotify client...")
     logger.info(f"Using client_id: {config.client_id}")
     logger.info(f"Using redirect_uri: {config.redirect_uri}")
-    return spotipy.Spotify(
-        auth_manager=SpotifyOAuth(
-            client_id=config.client_id,
-            client_secret=config.client_secret,
-            redirect_uri=config.redirect_uri,
-            scope=scope,
-            open_browser=True,
-            cache_path=".spotify_token_cache",
+    logger.info(f"Using scopes: {scope}")
+    
+    try:
+        sp = spotipy.Spotify(
+            auth_manager=SpotifyOAuth(
+                client_id=config.client_id,
+                client_secret=config.client_secret,
+                redirect_uri=config.redirect_uri,
+                scope=scope,
+                open_browser=True,
+                cache_path=".spotify_token_cache",
+            )
         )
-    )
+        # Test the authentication
+        user = sp.current_user()
+        logger.success(f"Successfully authenticated as: {user['display_name']}")
+        return sp
+    except Exception as e:
+        logger.error(f"Error during Spotify authentication: {e}")
+        raise
 
 
 def list_user_playlists(sp: spotipy.Spotify) -> list[PlaylistInfo]:
@@ -111,7 +121,10 @@ def list_user_playlists(sp: spotipy.Spotify) -> list[PlaylistInfo]:
         else:
             break
 
-    return user_playlists
+    # Sort playlists alphabetically, keeping Liked Songs first
+    regular_playlists = user_playlists[1:]  # All playlists except Liked Songs
+    sorted_regular_playlists = sorted(regular_playlists, key=lambda x: x["name"].lower())
+    return [user_playlists[0]] + sorted_regular_playlists  # Liked Songs + sorted regular playlists
 
 
 def select_playlist(sp: spotipy.Spotify, playlist_id: str | None = None) -> str:

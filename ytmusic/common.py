@@ -145,6 +145,8 @@ def list_user_playlists(ytm: YTMusic) -> list[PlaylistInfo]:
 
     # Format output
     user_playlists: list[PlaylistInfo] = []
+    liked_music: PlaylistInfo | None = None
+
     for playlist in playlists:
         try:
             if playlist["playlistId"] == "LM":
@@ -155,6 +157,11 @@ def list_user_playlists(ytm: YTMusic) -> list[PlaylistInfo]:
                 except Exception as e:
                     logger.warning(f"Could not get liked songs count: {e}")
                     track_count = 0
+                liked_music = {
+                    "name": playlist["title"],
+                    "id": playlist["playlistId"],
+                    "track_count": track_count,
+                }
             else:
                 # Regular playlist
                 try:
@@ -166,19 +173,25 @@ def list_user_playlists(ytm: YTMusic) -> list[PlaylistInfo]:
                     )
                     track_count = 0
 
-            user_playlists.append(
-                {
-                    "name": playlist["title"],
-                    "id": playlist["playlistId"],
-                    "track_count": track_count,
-                }
-            )
+                user_playlists.append(
+                    {
+                        "name": playlist["title"],
+                        "id": playlist["playlistId"],
+                        "track_count": track_count,
+                    }
+                )
         except Exception as e:
             logger.warning(
                 f"Error processing playlist {playlist.get('title', 'Unknown')}: {e}"
             )
             continue
 
+    # Sort regular playlists alphabetically
+    user_playlists.sort(key=lambda x: x["name"].lower())
+
+    # Add Liked Music first if it exists
+    if liked_music:
+        return [liked_music] + user_playlists
     return user_playlists
 
 

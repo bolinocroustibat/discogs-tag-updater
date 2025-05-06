@@ -119,14 +119,38 @@ def main() -> None:
     logger.info("Fetching tracks from YouTube Music playlist...")
     tracks: list[dict] = []
     try:
-        playlist = ytm.get_playlist(ytmusic_playlist_id)
-        for track in playlist["tracks"]:
-            if not track.get("title") or not track.get("artists"):
-                continue
-            artist_name = (
-                track["artists"][0]["name"] if track["artists"] else "Unknown Artist"
-            )
-            tracks.append({"name": track["title"], "artist": artist_name})
+        if ytmusic_playlist_id == "LM":
+            # Special case for Liked Music
+            results = ytm.get_liked_songs()
+            total_tracks = 0
+            while results:
+                batch_size = len(results["tracks"])
+                total_tracks += batch_size
+                logger.info(f"Processing batch of {batch_size} tracks (total: {total_tracks})")
+                
+                for track in results["tracks"]:
+                    if not track.get("title") or not track.get("artists"):
+                        continue
+                    artist_name = (
+                        track["artists"][0]["name"] if track["artists"] else "Unknown Artist"
+                    )
+                    tracks.append({"name": track["title"], "artist": artist_name})
+                
+                # Get next page if available
+                if "continuationContents" in results:
+                    results = ytm.get_liked_songs(continuation=results["continuationContents"]["musicShelfContinuation"]["continuation"])
+                else:
+                    break
+        else:
+            # Regular playlist
+            playlist = ytm.get_playlist(ytmusic_playlist_id)
+            for track in playlist["tracks"]:
+                if not track.get("title") or not track.get("artists"):
+                    continue
+                artist_name = (
+                    track["artists"][0]["name"] if track["artists"] else "Unknown Artist"
+                )
+                tracks.append({"name": track["title"], "artist": artist_name})
     except Exception as e:
         logger.error(f"Error fetching YouTube Music playlist: {e}")
         sys.exit(1)
@@ -140,15 +164,29 @@ def main() -> None:
     # Get existing tracks in Spotify playlist
     logger.info("Fetching existing tracks from Spotify playlist...")
     existing_tracks: set[str] = set()
-    results = sp.playlist_items(spotify_playlist_id)
-    while results:
-        for item in results["items"]:
-            if item["track"] and item["track"]["id"]:
-                existing_tracks.add(item["track"]["id"])
-        if results["next"]:
-            results = sp.next(results)
-        else:
-            break
+    
+    if spotify_playlist_id == "liked":
+        # Special case for Liked Songs
+        results = sp.current_user_saved_tracks()
+        while results:
+            for item in results["items"]:
+                if item["track"] and item["track"]["id"]:
+                    existing_tracks.add(item["track"]["id"])
+            if results["next"]:
+                results = sp.next(results)
+            else:
+                break
+    else:
+        # Regular playlist
+        results = sp.playlist_items(spotify_playlist_id)
+        while results:
+            for item in results["items"]:
+                if item["track"] and item["track"]["id"]:
+                    existing_tracks.add(item["track"]["id"])
+            if results["next"]:
+                results = sp.next(results)
+            else:
+                break
 
     # Process each track
     tracks_added = 0
@@ -171,7 +209,12 @@ def main() -> None:
                     continue
 
                 try:
-                    sp.playlist_add_items(spotify_playlist_id, [track_id])
+                    if spotify_playlist_id == "liked":
+                        # Special case for Liked Songs
+                        sp.current_user_saved_tracks_add([track_id])
+                    else:
+                        # Regular playlist
+                        sp.playlist_add_items(spotify_playlist_id, [track_id])
                     logger.success("Track added to Spotify playlist")
                     tracks_added += 1
                     time.sleep(1)  # Rate limiting
