@@ -47,8 +47,8 @@ class MusicFile:
             except Exception as e:
                 logger.error(f"Error reading M4A tags: {e}")
 
-    def search_spotify(self, sp: spotipy.Spotify) -> Optional[str]:
-        """Search for track on Spotify and return track ID if found"""
+    def search_spotify(self, sp: spotipy.Spotify) -> Optional[list[dict]]:
+        """Search for track on Spotify and return list of potential matches"""
         if not self.artist or not self.title:
             logger.error(f"Missing tags for local file {self.path.name}")
             return None
@@ -67,54 +67,63 @@ class MusicFile:
                 logger.error("No matches found on Spotify")
                 return None
 
-            # Show all potential matches
-            logger.info("\nPotential matches from Spotify:")
-            matches: list[str] = []
-            for i, track in enumerate(results["tracks"]["items"], 1):
+            # Format matches
+            matches: list[dict] = []
+            for track in results["tracks"]["items"]:
                 if not track.get("name") or not track.get("artists"):
                     continue
 
-                artist_name = track["artists"][0]["name"]
-                track_name = track["name"]
-                logger.info(f"{i}. Track: {track_name}")
-                logger.info(f"   Artist: {artist_name}")
-                matches.append(track["id"])
+                matches.append({
+                    "id": track["id"],
+                    "name": track["name"],
+                    "artist": track["artists"][0]["name"]
+                })
 
             if not matches:
                 logger.error("No valid matches found on Spotify")
                 return None
 
-            # Let user choose with 1 as default
-            choice = (
-                input("\nSelect match number (1 is default, 's' to skip): ")
-                .strip()
-                .lower()
-            )
-            if choice == "s":
-                logger.warning("Track skipped")
-                return None
-
-            if choice == "" or choice == "1":
-                choice = "1"
-
-            if choice.isdigit() and 1 <= int(choice) <= len(matches):
-                track_id = matches[int(choice) - 1]
-                track_info = sp.track(track_id)
-                if not track_info or not track_info.get("name") or not track_info.get("artists"):
-                    logger.error("Could not get track details from Spotify")
-                    return None
-                logger.success(
-                    f'Selected from Spotify: "{track_info["name"]} - {track_info["artists"][0]["name"]}"'
-                )
-                return track_id
-
-            logger.warning("Invalid choice - track skipped")
-            return None
+            return matches
 
         except Exception as e:
             logger.error(f"Error searching Spotify: {e}")
             logger.error(f"Query was: {query}")
             return None
+
+    def select_match(self, sp: spotipy.Spotify, matches: list[dict]) -> Optional[str]:
+        """Let user select a match from the list of potential matches"""
+        # Show all potential matches
+        logger.info("\nPotential matches from Spotify:")
+        for i, track in enumerate(matches, 1):
+            logger.info(f"{i}. Track: {track['name']}")
+            logger.info(f"   Artist: {track['artist']}")
+
+        # Let user choose with 1 as default
+        choice = (
+            input("\nSelect match number (1 is default, 's' to skip): ")
+            .strip()
+            .lower()
+        )
+        if choice == "s":
+            logger.warning("Track skipped")
+            return None
+
+        if choice == "" or choice == "1":
+            choice = "1"
+
+        if choice.isdigit() and 1 <= int(choice) <= len(matches):
+            track_id = matches[int(choice) - 1]["id"]
+            track_info = sp.track(track_id)
+            if not track_info or not track_info.get("name") or not track_info.get("artists"):
+                logger.error("Could not get track details from Spotify")
+                return None
+            logger.success(
+                f'Selected from Spotify: "{track_info["name"]} - {track_info["artists"][0]["name"]}"'
+            )
+            return track_id
+
+        logger.warning("Invalid choice - track skipped")
+        return None
 
 
 def main() -> None:
@@ -168,20 +177,24 @@ def main() -> None:
     # Process each music file
     for index, music_file in enumerate(music_files, 1):
         logger.info(f"\nProcessing local file {index}/{total_files}")
-        track_id = music_file.search_spotify(sp)
-        if track_id:
-            if track_id in existing_tracks:
-                logger.warning("Track already exists in Spotify playlist - skipping")
-                tracks_skipped += 1
-                continue
+        matches = music_file.search_spotify(sp)
+        if matches:
+            track_id = music_file.select_match(sp, matches)
+            if track_id:
+                if track_id in existing_tracks:
+                    logger.warning("Track already exists in Spotify playlist - skipping")
+                    tracks_skipped += 1
+                    continue
 
-            try:
-                sp.playlist_add_items(playlist_id, [track_id])
-                logger.success("Track added to Spotify playlist")
-                tracks_added += 1
-                time.sleep(1)  # Rate limiting
-            except Exception as e:
-                logger.error(f"Error adding to Spotify playlist: {e}")
+                try:
+                    sp.playlist_add_items(playlist_id, [track_id])
+                    logger.success("Track added to Spotify playlist")
+                    tracks_added += 1
+                    time.sleep(1)  # Rate limiting
+                except Exception as e:
+                    logger.error(f"Error adding to Spotify playlist: {e}")
+                    tracks_skipped += 1
+            else:
                 tracks_skipped += 1
         else:
             tracks_skipped += 1
