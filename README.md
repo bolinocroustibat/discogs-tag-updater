@@ -147,3 +147,23 @@ This will show a menu with the following options:
 - Find and remove duplicate tracks in YouTube Music playlist
 
 For each track found, you'll be prompted to confirm whether you want to add it to your playlist.
+
+## TODO
+
+### Discogs Tag Updater
+- Add feature to rename local files from ID3 tags
+- Add a main menu to ask the user what they want to do:
+  - Update tags
+  - Rename files
+  - Both
+
+### Common Improvements
+- Ask user for local path if not provided in `config.toml` for:
+  - Discogs tag updater
+  - Spotify utilities
+  - YouTube Music utilities
+
+### Spotify Improvements
+- In `spotify/add_tracks.py`: Compare Spotify matches with local files BEFORE asking user for match selection
+  - This will help identify the best match automatically
+  - Only ask user if no exact match is found
