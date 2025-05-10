@@ -1,11 +1,10 @@
-import sys
 import time
-from pathlib import Path
 from typing import TypedDict
 
 from ytmusicapi import YTMusic
+from mininterface import Mininterface
 
-from ytmusic.common import setup_ytmusic, logger, select_playlist
+from ytmusic.common import setup_ytmusic, select_playlist
 
 
 class TrackInfo(TypedDict):
@@ -14,15 +13,16 @@ class TrackInfo(TypedDict):
     setVideoId: str
 
 
-def find_duplicates(ytm: YTMusic, playlist_id: str) -> dict[str, list[TrackInfo]]:
+def find_duplicates(m: Mininterface, ytm: YTMusic, playlist_id: str) -> dict[str, list[TrackInfo]]:
     """Find duplicate tracks in a YouTube Music playlist"""
-    logger.info("Fetching YouTube Music playlist tracks...")
+    m.dialog("Fetching YouTube Music playlist tracks...")
 
     # Check if this is Liked Music playlist
     is_liked_music = playlist_id == "LM"
     if is_liked_music:
-        logger.warning(
-            "Liked Music playlist cannot be modified directly. Please use a regular playlist."
+        m.dialog(
+            "Liked Music playlist cannot be modified directly. Please use a regular playlist.",
+            title="Warning"
         )
         return {}
 
@@ -31,12 +31,12 @@ def find_duplicates(ytm: YTMusic, playlist_id: str) -> dict[str, list[TrackInfo]
     try:
         # First get basic playlist info
         playlist = ytm.get_playlist(playlist_id)
-        logger.info(
+        m.dialog(
             f"Successfully connected to YouTube Music API - Playlist: {playlist.get('title')}"
         )
 
     except Exception as e:
-        logger.error(f"Error accessing playlist: {e}")
+        m.dialog(f"Error accessing playlist: {e}", title="Error")
         return {}
 
     total_tracks = 0
@@ -78,9 +78,9 @@ def find_duplicates(ytm: YTMusic, playlist_id: str) -> dict[str, list[TrackInfo]
             else:
                 tracks[video_id] = [track_info]
 
-        logger.info(f"Processed {total_tracks} tracks from YouTube Music playlist")
+        m.dialog(f"Processed {total_tracks} tracks from YouTube Music playlist")
     except Exception as e:
-        logger.error(f"Error processing tracks: {e}")
+        m.dialog(f"Error processing tracks: {e}", title="Error")
         return {}
 
     # Filter only duplicates
@@ -89,7 +89,7 @@ def find_duplicates(ytm: YTMusic, playlist_id: str) -> dict[str, list[TrackInfo]
 
 
 def remove_duplicates(
-    ytm: YTMusic, playlist_id: str, duplicates: dict[str, list[TrackInfo]]
+    m: Mininterface, ytm: YTMusic, playlist_id: str, duplicates: dict[str, list[TrackInfo]]
 ) -> None:
     """Remove duplicate tracks from YouTube Music playlist keeping the first instance"""
     if not duplicates:
@@ -97,8 +97,9 @@ def remove_duplicates(
 
     # Check if this is Liked Music playlist
     if playlist_id == "LM":
-        logger.error(
-            "Cannot modify Liked Music playlist directly. Please use a regular playlist."
+        m.dialog(
+            "Cannot modify Liked Music playlist directly. Please use a regular playlist.",
+            title="Error"
         )
         return
 
@@ -114,56 +115,45 @@ def remove_duplicates(
 
     if tracks_to_remove:
         try:
-            logger.info(f"Attempting to remove {len(tracks_to_remove)} tracks")
+            m.dialog(f"Attempting to remove {len(tracks_to_remove)} tracks")
             for track in tracks_to_remove:
                 try:
                     ytm.remove_playlist_items(playlist_id, [track])
                 except Exception as e:
-                    logger.error(f"Error removing track: {e}")
+                    m.dialog(f"Error removing track: {e}", title="Error")
                 time.sleep(1)  # Rate limiting
-            logger.success(
-                f"Successfully removed {len(tracks_to_remove)} duplicate tracks from YouTube Music playlist"
+            m.dialog(
+                f"Successfully removed {len(tracks_to_remove)} duplicate tracks from YouTube Music playlist",
+                title="Success"
             )
         except Exception as e:
-            logger.error(f"Error removing tracks from YouTube Music playlist: {e}")
-            logger.error(
-                "Please make sure you have the necessary permissions to modify this playlist."
+            m.dialog(f"Error removing tracks from YouTube Music playlist: {e}", title="Error")
+            m.dialog(
+                "Please make sure you have the necessary permissions to modify this playlist.",
+                title="Error"
             )
 
 
-def main() -> None:
+def main(m: Mininterface) -> None:
     ytm = setup_ytmusic()
 
     # Get playlist ID from user selection
     playlist_id = select_playlist(ytm)
 
-    duplicates = find_duplicates(ytm, playlist_id)
+    duplicates = find_duplicates(m, ytm, playlist_id)
 
     if not duplicates:
-        logger.success("No duplicates found in YouTube Music playlist!")
+        m.dialog("No duplicates found in YouTube Music playlist!", title="Success")
         return
 
-    logger.info(
+    m.dialog(
         f"\nFound {sum(len(v) - 1 for v in duplicates.values())} duplicate tracks in YouTube Music playlist:"
     )
     for video_id, instances in duplicates.items():
         # Get the track name from the first instance (they're all the same track)
         track_name = instances[0]["name"]
-        logger.info(f"\n{track_name}")
-        logger.info(f"  Found {len(instances)} instances")
+        m.dialog(f"\n{track_name}")
+        m.dialog(f"  Found {len(instances)} instances")
 
-    if (
-        input(
-            "\nDo you want to remove duplicates from YouTube Music playlist? (y/N): "
-        ).lower()
-        == "y"
-    ):
-        remove_duplicates(ytm, playlist_id, duplicates)
-
-
-if __name__ == "__main__":
-    if not Path("config.ini").is_file():
-        logger.error("Configuration file not found")
-        sys.exit(1)
-
-    main()
+    if m.confirm("Do you want to remove duplicates from YouTube Music playlist?"):
+        remove_duplicates(m, ytm, playlist_id, duplicates)

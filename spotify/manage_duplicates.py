@@ -1,154 +1,145 @@
-import sys
 import time
-from pathlib import Path
-from typing import TypedDict
+from typing import TypedDict, Protocol
 
 import spotipy
+from spotipy.oauth2 import SpotifyOAuth
+from mininterface import Mininterface
 
-from spotify.common import setup_spotify, logger, select_playlist
+from spotify.common import setup_spotify, select_playlist
 
 
-class TrackInstance(TypedDict):
+class TrackInfo(TypedDict):
     name: str
-    added_at: str
+    id: str
+    uri: str
 
 
-def find_duplicates(
-    sp: spotipy.Spotify, playlist_id: str
-) -> dict[str, list[TrackInstance]]:
-    """Find duplicate tracks in a playlist"""
-    logger.info("Fetching playlist tracks...")
-    logger.info(f"Using playlist ID: {playlist_id}")
+class MininterfaceProtocol(Protocol):
+    def dialog(self, message: str, title: str | None = None) -> None: ...
+    def confirm(self, message: str) -> bool: ...
 
-    # Special case for Liked Songs
-    if playlist_id == "liked":
-        logger.info(
-            "Note: Liked Songs cannot contain duplicates by design - Spotify automatically prevents this."
-        )
-        return {}
+
+def find_duplicates(m: Mininterface, sp: spotipy.Spotify, playlist_id: str) -> dict[str, list[TrackInfo]]:
+    """Find duplicate tracks in a Spotify playlist"""
+    m.dialog("Fetching Spotify playlist tracks...")
 
     # Get all tracks from playlist
-    tracks: dict[
-        str, list[TrackInstance]
-    ] = {}  # key: track_id, value: list of [track_info, added_at]
+    tracks: dict[str, list[TrackInfo]] = {}  # key: track_id, value: list of track_info
     try:
-        # Regular playlist
-        results = sp.playlist_items(
-            playlist_id,
-            fields="items.track.id,items.track.name,items.track.artists,items.added_at,next",
+        # First get basic playlist info
+        playlist = sp.playlist(playlist_id)
+        if not playlist:
+            m.dialog("Could not access playlist", title="Error")
+            return {}
+        m.dialog(
+            f"Successfully connected to Spotify API - Playlist: {playlist.get('name')}"
         )
-        logger.info("Successfully connected to Spotify API")
+
     except Exception as e:
-        logger.error(f"Error fetching playlist items: {e}")
+        m.dialog(f"Error accessing playlist: {e}", title="Error")
         return {}
 
     total_tracks = 0
-    while results:
-        try:
-            batch_size = len(results["items"])
-            total_tracks += batch_size
-            logger.info(
-                f"Processing batch of {batch_size} tracks (total: {total_tracks})"
-            )
+    try:
+        if not playlist.get("tracks") or not playlist["tracks"].get("items"):
+            m.dialog("No tracks found in playlist", title="Error")
+            return {}
 
-            for item in results["items"]:
-                if not item["track"]:  # Skip empty tracks
-                    continue
+        for item in playlist["tracks"]["items"]:
+            track = item["track"]
+            if not track:  # Skip empty tracks
+                continue
 
-                track = item["track"]
-                track_id = track["id"]
-                artist = (
-                    track["artists"][0]["name"]
-                    if track["artists"]
-                    else "Unknown Artist"
-                )
-                track_name = f"{track['name']} - {artist}"  # Keep for display purposes
+            total_tracks += 1
+            track_id = track["id"]
 
-                track_instance: TrackInstance = {
-                    "name": track_name,
-                    "added_at": item["added_at"],
-                }
+            # Safely get artist name with fallbacks
+            artist = "Unknown Artist"
+            if track.get("artists") and track["artists"]:
+                artist = track["artists"][0].get("name", "Unknown Artist")
 
-                if track_id in tracks:
-                    tracks[track_id].append(track_instance)
-                else:
-                    tracks[track_id] = [track_instance]
+            # Safely get title
+            title = track.get("name", "Unknown Title")
+            track_name = f"{title} - {artist}"
 
-            if results["next"]:
-                logger.info("Fetching next batch of tracks...")
-                results = sp.next(results)
+            track_info: TrackInfo = {
+                "name": track_name,
+                "id": track_id,
+                "uri": track["uri"],
+            }
+
+            if track_id in tracks:
+                tracks[track_id].append(track_info)
             else:
-                logger.info("Finished fetching all tracks")
-                break
-        except Exception as e:
-            logger.error(f"Error processing batch: {e}")
-            break
+                tracks[track_id] = [track_info]
+
+        m.dialog(f"Processed {total_tracks} tracks from Spotify playlist")
+    except Exception as e:
+        m.dialog(f"Error processing tracks: {e}", title="Error")
+        return {}
 
     # Filter only duplicates
     duplicates = {k: v for k, v in tracks.items() if len(v) > 1}
-    logger.info(f"Found {len(duplicates)} tracks with duplicates")
     return duplicates
 
 
 def remove_duplicates(
-    sp: spotipy.Spotify, playlist_id: str, duplicates: dict[str, list[TrackInstance]]
+    m: Mininterface, sp: spotipy.Spotify, playlist_id: str, duplicates: dict[str, list[TrackInfo]]
 ) -> None:
-    """Remove duplicate tracks keeping the oldest one"""
+    """Remove duplicate tracks from Spotify playlist keeping the first instance"""
     if not duplicates:
         return
 
-    tracks_to_remove: list[str] = []
+    tracks_to_remove: list[dict[str, str]] = []
     for track_id, instances in duplicates.items():
-        # Sort by added_at date in ascending order (oldest first, newest last)
-        sorted_by_date = sorted(instances, key=lambda x: x["added_at"])
-        # Keep the first (oldest) track and remove all newer duplicates
-        newest_duplicates = sorted_by_date[1:]
-        # Add the track ID for each duplicate instance
-        tracks_to_remove.extend([track_id] * len(newest_duplicates))
+        # Keep the first instance and remove the rest
+        for instance in instances[1:]:  # Skip first instance
+            track_info = {
+                "uri": instance["uri"],
+            }
+            tracks_to_remove.append(track_info)
 
     if tracks_to_remove:
         try:
-            # Spotify API can only remove 100 tracks at a time
-            for i in range(0, len(tracks_to_remove), 100):
-                chunk = tracks_to_remove[i : i + 100]
-                sp.playlist_remove_all_occurrences_of_items(playlist_id, chunk)
+            m.dialog(f"Attempting to remove {len(tracks_to_remove)} tracks")
+            for track in tracks_to_remove:
+                try:
+                    sp.playlist_remove_all_occurrences_of_items(playlist_id, [track["uri"]])
+                except Exception as e:
+                    m.dialog(f"Error removing track: {e}", title="Error")
                 time.sleep(1)  # Rate limiting
-            logger.success(
-                f"Successfully removed {len(tracks_to_remove)} duplicate tracks"
+            m.dialog(
+                f"Successfully removed {len(tracks_to_remove)} duplicate tracks from Spotify playlist",
+                title="Success"
             )
         except Exception as e:
-            logger.error(f"Error removing tracks: {e}")
+            m.dialog(f"Error removing tracks from Spotify playlist: {e}", title="Error")
+            m.dialog(
+                "Please make sure you have the necessary permissions to modify this playlist.",
+                title="Error"
+            )
 
 
-def main() -> None:
+def main(m: Mininterface) -> None:
     sp = setup_spotify()
 
     # Get playlist ID from user selection
     playlist_id = select_playlist(sp)
 
-    duplicates = find_duplicates(sp, playlist_id)
+    duplicates = find_duplicates(m, sp, playlist_id)
 
     if not duplicates:
-        logger.success("No duplicates found!")
+        m.dialog("No duplicates found in Spotify playlist!", title="Success")
         return
 
-    logger.info(
-        f"\nFound {sum(len(v) - 1 for v in duplicates.values())} duplicate tracks:"
+    m.dialog(
+        f"\nFound {sum(len(v) - 1 for v in duplicates.values())} duplicate tracks in Spotify playlist:"
     )
     for track_id, instances in duplicates.items():
         # Get the track name from the first instance (they're all the same track)
         track_name = instances[0]["name"]
-        logger.info(f"\n{track_name}")
-        for i, track in enumerate(sorted(instances, key=lambda x: x["added_at"]), 1):
-            logger.info(f"  {i}. Added on: {track['added_at']}")
+        m.dialog(f"\n{track_name}")
+        m.dialog(f"  Found {len(instances)} instances")
 
-    if input("\nDo you want to remove duplicates? (y/N): ").lower() == "y":
-        remove_duplicates(sp, playlist_id, duplicates)
-
-
-if __name__ == "__main__":
-    if not Path("config.ini").is_file():
-        logger.error("Configuration file not found")
-        sys.exit(1)
-
-    main()
+    if m.confirm("Do you want to remove duplicates from Spotify playlist?"):
+        remove_duplicates(m, sp, playlist_id, duplicates)
