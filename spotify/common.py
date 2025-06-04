@@ -9,6 +9,7 @@ import sys
 from logger import FileLogger
 
 TOML_PATH = Path("config.toml")
+MAX_MATCHES_TO_DISPLAY = 4  # Maximum number of matches to show for each track
 logger = FileLogger("spotify/spotify.log")
 
 
@@ -304,7 +305,7 @@ def search_spotify(
     query = f"track:{track_name} artist:{artist_name}"
     if file_name:
         logger.info(f'\nLocal file: "{file_name}"')
-    logger.info(f'Searching Spotify for "{track_name} - {artist_name}"')
+    logger.info(f'\nSearching Spotify for "{track_name} - {artist_name}"')
 
     try:
         results = sp.search(query, type="track", limit=5)
@@ -334,7 +335,8 @@ def search_spotify(
             logger.error("No valid matches found on Spotify")
             return None
 
-        return matches
+        # Only return first N matches
+        return matches[:MAX_MATCHES_TO_DISPLAY]
 
     except Exception as e:
         logger.error(f"Error searching Spotify: {e}")

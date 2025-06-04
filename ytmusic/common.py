@@ -11,6 +11,7 @@ from logger import FileLogger
 TOML_PATH = Path("config.toml")
 OAUTH_PATH = Path("ytmusic") / "oauth.json"
 BROWSER_PATH = Path("ytmusic") / "browser.json"
+MAX_MATCHES_TO_DISPLAY = 4  # Maximum number of matches to show for each track
 logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
 
 
@@ -384,7 +385,7 @@ def search_ytmusic_tracks(
     query = f"{track_name} {artist_name}"
     if file_name:
         logger.info(f'\nLocal file: "{file_name}"')
-    logger.info(f'Searching YouTube Music for "{track_name} - {artist_name}"')
+    logger.info(f'\nSearching YouTube Music for "{track_name} - {artist_name}"')
 
     max_retries = 3
     retry_delay = 5  # Initial delay in seconds
@@ -399,13 +400,13 @@ def search_ytmusic_tracks(
             # Format matches
             matches: list[dict] = []
             for track in results:
-                if not track.get("name") or not track.get("artists"):
+                if not track.get("videoId") or not track.get("title") or not track.get("artists"):
                     continue
 
                 matches.append(
                     {
                         "id": track["videoId"],
-                        "name": track["name"],
+                        "name": track["title"],
                         "artist": track["artists"][0]["name"],
                     }
                 )
@@ -414,7 +415,8 @@ def search_ytmusic_tracks(
                 logger.error("No valid matches found on YouTube Music")
                 return None
 
-            return matches
+            # Only return first N matches
+            return matches[:MAX_MATCHES_TO_DISPLAY]
 
         except Exception as e:
             if "rate/request limit" in str(e).lower():
@@ -449,12 +451,6 @@ def select_match(
     Returns:
         str | None: Selected track ID or None if skipped/invalid
     """
-    # Show all potential matches
-    logger.info("\nPotential matches from YouTube Music:")
-    for i, track in enumerate(matches, 1):
-        logger.info(f"{i}. Track: {track['name']}")
-        logger.info(f"   Artist: {track['artist']}")
-
     # Let user choose with 1 as default
     if auto_first:
         choice = "1"
@@ -480,17 +476,10 @@ def select_match(
         choice = "1"
 
     if choice.isdigit() and 1 <= int(choice) <= len(matches):
-        track_id = matches[int(choice) - 1]["id"]
-        track_info = ytm.get_song(track_id)
-        if (
-            not track_info
-            or not track_info.get("name")
-            or not track_info.get("artists")
-        ):
-            logger.error("Could not get track details from YouTube Music")
-            return None
+        selected = matches[int(choice) - 1]
+        track_id = selected["id"]
         logger.success(
-            f'Selected from YouTube Music: "{track_info["name"]} - {track_info["artists"][0]["name"]}"'
+            f'Selected from YouTube Music: "{selected["name"]} - {selected["artist"]}"'
         )
         return track_id
 
