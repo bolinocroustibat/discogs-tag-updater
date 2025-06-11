@@ -2,7 +2,13 @@ import sys
 from pathlib import Path
 import time
 
-from tqdm import tqdm
+from rich.progress import (
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    BarColumn,
+    TaskProgressColumn,
+)
 
 from ytmusic.common import (
     Config,
@@ -57,32 +63,42 @@ def main() -> None:
 
     # Process each music file
     logger.info("\nProcessing files...")
-    for music_file in tqdm(music_files, desc="Processing files", unit="file"):
-        matches = search_ytmusic_tracks(
-            ytm, music_file.title, music_file.artist, music_file.path.name
-        )
-        if matches:
-            track_id = select_match(ytm, matches)
-            if track_id:
-                if track_id in existing_tracks:
-                    logger.warning(
-                        "Track already exists in YouTube Music playlist - skipping"
-                    )
-                    tracks_skipped += 1
-                    continue
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        transient=True,
+    ) as progress:
+        task = progress.add_task("Processing files...", total=len(music_files))
+        for music_file in music_files:
+            matches = search_ytmusic_tracks(
+                ytm, music_file.title, music_file.artist, music_file.path.name
+            )
+            if matches:
+                track_id = select_match(ytm, matches)
+                if track_id:
+                    if track_id in existing_tracks:
+                        logger.warning(
+                            "Track already exists in YouTube Music playlist - skipping"
+                        )
+                        tracks_skipped += 1
+                        progress.advance(task)
+                        continue
 
-                try:
-                    ytm.add_playlist_items(playlist_id, [track_id])
-                    logger.success("Track added to YouTube Music playlist.")
-                    tracks_added += 1
-                    time.sleep(1)  # Rate limiting
-                except Exception as e:
-                    logger.error(f"Error adding to YouTube Music playlist: {e}")
+                    try:
+                        ytm.add_playlist_items(playlist_id, [track_id])
+                        logger.success("Track added to YouTube Music playlist.")
+                        tracks_added += 1
+                        time.sleep(1)  # Rate limiting
+                    except Exception as e:
+                        logger.error(f"Error adding to YouTube Music playlist: {e}")
+                        tracks_skipped += 1
+                else:
                     tracks_skipped += 1
             else:
                 tracks_skipped += 1
-        else:
-            tracks_skipped += 1
+            progress.advance(task)
 
     # Print summary
     logger.info("\nSummary:")

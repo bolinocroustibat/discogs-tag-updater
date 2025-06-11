@@ -12,12 +12,12 @@ dependencies = [
     "inquirer>=2.10.1",
     "mutagen<2.0.0,>=1.45.1",
     "requests<3.0.0,>=2.25.1",
+    "rich>=13.7.0",
     "spotipy>=2.23.0",
     "ytmusicapi>=0.23.0",
-    "tqdm>=4.66.0",
     "python-Levenshtein>=0.23.0",
 ]
-requires-python = ">=3.11,<4.0"
+requires-python = ">=3.10,<4.0"
 license = { text = "MIT" }
 
 [project.scripts]

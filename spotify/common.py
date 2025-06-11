@@ -70,7 +70,9 @@ def setup_spotify() -> spotipy.Spotify:
                 scope=scope,
                 open_browser=True,
                 cache_path="spotify/.spotify_token_cache",
-            )
+                requests_timeout=30,
+            ),
+            requests_timeout=30,
         )
         # Test the authentication
         user = sp.current_user()

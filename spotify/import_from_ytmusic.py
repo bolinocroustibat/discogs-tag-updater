@@ -2,7 +2,13 @@ import sys
 from pathlib import Path
 import time
 
-from tqdm import tqdm
+from rich.progress import (
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    BarColumn,
+    TaskProgressColumn,
+)
 import spotipy
 
 from spotify.common import (
@@ -76,75 +82,87 @@ def process_tracks(
     retry_delay = 5  # Initial delay in seconds
 
     logger.info("\nProcessing tracks...")
-    for track in tqdm(tracks, desc="Processing tracks", unit="track"):
-        track_name = track["name"]
-        artist_name = track["artist"]
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        transient=True,
+    ) as progress:
+        task = progress.add_task("Processing tracks...", total=len(tracks))
+        for track in tracks:
+            track_name = track["name"]
+            artist_name = track["artist"]
 
-        # Define search function with access to auto_first
-        def search_with_auto_first(
-            sp: spotipy.Spotify, track_name: str, artist_name: str
-        ) -> str | None:
-            nonlocal auto_first, retry_delay
-            matches = search_spotify(sp, track_name, artist_name)
-            if not matches:
-                return None
+            # Define search function with access to auto_first
+            def search_with_auto_first(
+                sp: spotipy.Spotify, track_name: str, artist_name: str
+            ) -> str | None:
+                nonlocal auto_first, retry_delay
+                matches = search_spotify(sp, track_name, artist_name)
+                if not matches:
+                    return None
 
-            # Let user choose with 1 as default
-            if auto_first:
-                choice = "1"
-            else:
-                choice = (
-                    input(
-                        "\nSelect match number (1 is default, 's' to skip, 'a' for auto-first): "
+                # Let user choose with 1 as default
+                if auto_first:
+                    choice = "1"
+                else:
+                    choice = (
+                        input(
+                            "\nSelect match number (1 is default, 's' to skip, 'a' for auto-first): "
+                        )
+                        .strip()
+                        .lower()
                     )
-                    .strip()
-                    .lower()
-                )
-                if choice == "a":
-                    logger.info(
-                        "Auto-first mode enabled - will select first match for all remaining tracks"
-                    )
-                    auto_first = True
+                    if choice == "a":
+                        logger.info(
+                            "Auto-first mode enabled - will select first match for all remaining tracks"
+                        )
+                        auto_first = True
+                        choice = "1"
+
+                if choice == "s":
+                    logger.warning("Track skipped")
+                    return None
+
+                if choice == "" or choice == "1":
                     choice = "1"
 
-            if choice == "s":
-                logger.warning("Track skipped")
+                if choice.isdigit() and 1 <= int(choice) <= len(matches):
+                    track_id = matches[int(choice) - 1]["id"]
+                    track_info = sp.track(track_id)
+                    if not track_info:
+                        logger.error("Could not get track details from Spotify")
+                        return None
+                    logger.success(
+                        f'Selected from Spotify: "{track_info["name"]} - {track_info["artists"][0]["name"]}"'
+                    )
+                    return track_id
+
+                logger.warning("Invalid choice - track skipped")
                 return None
 
-            if choice == "" or choice == "1":
-                choice = "1"
+            track_id = search_with_auto_first(sp, track_name, artist_name)
 
-            if choice.isdigit() and 1 <= int(choice) <= len(matches):
-                track_id = matches[int(choice) - 1]["id"]
-                track_info = sp.track(track_id)
-                if not track_info:
-                    logger.error("Could not get track details from Spotify")
-                    return None
-                logger.success(
-                    f'Selected from Spotify: "{track_info["name"]} - {track_info["artists"][0]["name"]}"'
+            if track_id:
+                if track_id in existing_tracks:
+                    logger.warning(
+                        "Track already exists in Spotify playlist - skipping"
+                    )
+                    tracks_skipped += 1
+                    progress.advance(task)
+                    continue
+
+                success, retry_delay = add_track_to_spotify(
+                    sp, track_id, spotify_playlist_id, retry_delay
                 )
-                return track_id
-
-            logger.warning("Invalid choice - track skipped")
-            return None
-
-        track_id = search_with_auto_first(sp, track_name, artist_name)
-
-        if track_id:
-            if track_id in existing_tracks:
-                logger.warning("Track already exists in Spotify playlist - skipping")
-                tracks_skipped += 1
-                continue
-
-            success, retry_delay = add_track_to_spotify(
-                sp, track_id, spotify_playlist_id, retry_delay
-            )
-            if success:
-                tracks_added += 1
+                if success:
+                    tracks_added += 1
+                else:
+                    tracks_skipped += 1
             else:
                 tracks_skipped += 1
-        else:
-            tracks_skipped += 1
+            progress.advance(task)
 
     return tracks_added, tracks_skipped
 

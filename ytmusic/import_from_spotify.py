@@ -3,7 +3,13 @@ from pathlib import Path
 import time
 
 from ytmusicapi import YTMusic
-from tqdm import tqdm
+from rich.progress import (
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    BarColumn,
+    TaskProgressColumn,
+)
 
 from spotify.common import (
     Config as SpotifyConfig,
@@ -77,32 +83,42 @@ def process_tracks(
     retry_delay = 5  # Initial delay in seconds
 
     logger.info("\nProcessing tracks...")
-    for track in tqdm(tracks, desc="Processing tracks", unit="track"):
-        track_name = track["name"]
-        artist_name = track["artist"]
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        transient=True,
+    ) as progress:
+        task = progress.add_task("Processing tracks...", total=len(tracks))
+        for track in tracks:
+            track_name = track["name"]
+            artist_name = track["artist"]
 
-        matches = search_ytmusic_tracks(ytm, track_name, artist_name)
-        if matches:
-            video_id = select_match(ytm, matches, auto_first)
-            if video_id:
-                if video_id in existing_tracks:
-                    logger.warning(
-                        "Track already exists in YouTube Music playlist - skipping"
+            matches = search_ytmusic_tracks(ytm, track_name, artist_name)
+            if matches:
+                video_id = select_match(ytm, matches, auto_first)
+                if video_id:
+                    if video_id in existing_tracks:
+                        logger.warning(
+                            "Track already exists in YouTube Music playlist - skipping"
+                        )
+                        tracks_skipped += 1
+                        progress.advance(task)
+                        continue
+
+                    success, retry_delay = add_track_to_ytmusic(
+                        ytm, video_id, ytmusic_playlist_id, retry_delay
                     )
-                    tracks_skipped += 1
-                    continue
-
-                success, retry_delay = add_track_to_ytmusic(
-                    ytm, video_id, ytmusic_playlist_id, retry_delay
-                )
-                if success:
-                    tracks_added += 1
+                    if success:
+                        tracks_added += 1
+                    else:
+                        tracks_skipped += 1
                 else:
                     tracks_skipped += 1
             else:
                 tracks_skipped += 1
-        else:
-            tracks_skipped += 1
+            progress.advance(task)
 
     return tracks_added, tracks_skipped
 

@@ -400,7 +400,11 @@ def search_ytmusic_tracks(
             # Format matches
             matches: list[dict] = []
             for track in results:
-                if not track.get("videoId") or not track.get("title") or not track.get("artists"):
+                if (
+                    not track.get("videoId")
+                    or not track.get("title")
+                    or not track.get("artists")
+                ):
                     continue
 
                 matches.append(
