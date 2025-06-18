@@ -23,7 +23,7 @@ from rich.progress import (
     TaskProgressColumn,
 )
 
-from local_files.common import logger
+from local_files.common import logger, AUDIO_FILES_EXTENSIONS
 
 
 class DTag:
@@ -332,7 +332,7 @@ def main(directory: Path, config=None, ds=None) -> None:
     files = {
         DTag(path=p, suffix=p.suffix, filename=p.name, config=config, ds=ds)
         for p in Path(directory).glob("**/*")
-        if p.suffix in [".flac", ".mp3", ".m4a"]
+        if p.suffix in AUDIO_FILES_EXTENSIONS
     }
 
     logger.info("\nProcessing files...")

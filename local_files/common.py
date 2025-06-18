@@ -7,6 +7,7 @@ from mutagen.mp3 import MP3
 from mutagen.id3._util import ID3NoHeaderError
 
 TOML_PATH = Path("config.toml")
+AUDIO_FILES_EXTENSIONS = {".mp3", ".m4a", ".flac", ".ogg", ".wav"}
 logger = FileLogger(str(Path("local_files") / "local_files.log"))
 
 
@@ -51,11 +52,10 @@ class Config:
 
 def get_audio_files(directory: Path) -> list[Path]:
     """Get all audio files in directory and subdirectories"""
-    audio_extensions = {".mp3", ".m4a", ".flac", ".ogg", ".wav"}
     return [
         f
         for f in directory.rglob("*")
-        if f.is_file() and f.suffix.lower() in audio_extensions
+        if f.is_file() and f.suffix.lower() in AUDIO_FILES_EXTENSIONS
     ]
 
 
