@@ -4,7 +4,8 @@ import inquirer
 import tomllib
 import discogs_client as dc
 
-from local_files.common import Config as DiscogsConfig, logger as discogs_logger
+from discogs import Config as DiscogsConfig
+from local_files.logger import logger as discogs_logger
 from local_files.update_tags import update_tags_from_discogs
 from local_files.rename_from_tags import rename_files_from_tags
 

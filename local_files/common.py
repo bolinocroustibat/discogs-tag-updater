@@ -1,4 +1,3 @@
-import tomllib
 from pathlib import Path
 from local_files.logger import logger
 from mutagen._file import File
@@ -6,51 +5,25 @@ from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
 from mutagen.id3._util import ID3NoHeaderError
 
-TOML_PATH = Path("config.toml")
 AUDIO_FILES_EXTENSIONS = {".mp3", ".m4a", ".flac", ".ogg", ".wav"}
 
 
-class Config:
-    def __init__(self) -> None:
-        with open(TOML_PATH, "rb") as f:
-            config = tomllib.load(f)
-
-        # Get media path from local_files section, default to None if not found
-        self.media_path = None
-        if "local_files" in config and "path" in config["local_files"]:
-            raw_path = config["local_files"]["path"].replace("\\", "")
-            self.media_path = Path(raw_path)
-
-        # Discogs config
-        discogs_config = config["discogs"]
-        self.token = discogs_config["token"]
-        self.overwrite_year = discogs_config["overwrite_year"]
-        self.overwrite_genre = discogs_config["overwrite_genre"]
-        self.embed_cover = discogs_config["embed_cover"]
-        self.overwrite_cover = discogs_config["overwrite_cover"]
-        self.rename_file = discogs_config["rename_file"]
-
-    @staticmethod
-    def write(config_data: dict) -> None:
-        """write toml file with current vars"""
-        with open(TOML_PATH, "w") as f:
-            f.write("[common]\n")
-            f.write(f'path = "{config_data["media_path"]}"\n\n')
-            f.write("[discogs]\n")
-            f.write(f'token = "{config_data["token"]}"\n')
-            f.write(f"overwrite_year = {str(config_data['overwrite_year']).lower()}\n")
-            f.write(
-                f"overwrite_genre = {str(config_data['overwrite_genre']).lower()}\n"
-            )
-            f.write(f"embed_cover = {str(config_data['embed_cover']).lower()}\n")
-            f.write(
-                f"overwrite_cover = {str(config_data['overwrite_cover']).lower()}\n"
-            )
-            f.write(f"rename_file = {str(config_data['rename_file']).lower()}\n")
-
-
 def get_audio_files(directory: Path) -> list[Path]:
-    """Get all audio files in directory and subdirectories"""
+    """Get all audio files in directory and subdirectories.
+
+    Recursively searches through the given directory and all its subdirectories
+    to find files with supported audio extensions.
+
+    Args:
+        directory: The root directory to search for audio files.
+
+    Returns:
+        A list of Path objects representing audio files found in the directory
+        and its subdirectories.
+
+    Note:
+        Supported audio formats: .mp3, .m4a, .flac, .ogg, .wav
+    """
     return [
         f
         for f in directory.rglob("*")
@@ -59,7 +32,26 @@ def get_audio_files(directory: Path) -> list[Path]:
 
 
 def get_track_info(file_path: Path) -> tuple[str, str] | None:
-    """Get artist and title from audio file tags"""
+    """Get artist and title from the tags of an audio file.
+
+    Attempts to extract artist and title metadata from various audio file formats.
+    Uses different strategies depending on the file type for optimal tag reading.
+
+    Args:
+        file_path: Path to the audio file to read tags from.
+
+    Returns:
+        A tuple of (artist, title) strings if both tags are found and valid,
+        None if either tag is missing or the file cannot be read.
+
+    Raises:
+        Exception: If there's an error reading the file or tags.
+
+    Note:
+        - For MP3 files, uses EasyID3 first (more reliable), then falls back to generic tags
+        - For other formats, uses the generic mutagen File interface
+        - Logs warnings for missing tags and errors for file reading issues
+    """
     try:
         audio = File(file_path)
         if audio is None:

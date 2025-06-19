@@ -15,6 +15,33 @@ from discogs import DTag
 
 
 def update_tags_from_discogs(directory: Path, config=None, ds=None) -> None:
+    """Update music file tags using Discogs metadata.
+
+    Main function that processes all audio files in the specified directory,
+    searches for matching releases on Discogs, and updates the file tags
+    with metadata including genres, year, and cover art.
+
+    The function creates DTag instances for each audio file, searches Discogs
+    for matching releases, and updates the file tags based on the configuration
+    settings. It also optionally renames files if the rename_file option is enabled.
+
+    Args:
+        directory: Path to the directory containing audio files to process.
+        config: Configuration object containing Discogs and file processing settings.
+        ds: Authenticated Discogs client instance.
+
+    Raises:
+        ValueError: If config or ds parameters are not provided.
+        SystemExit: If the directory doesn't exist or is invalid.
+
+    Note:
+        - Processes all supported audio files recursively in the directory
+        - Uses fuzzy matching to find the best Discogs release for each track
+        - Updates genres, year, and cover art based on configuration settings
+        - Optionally renames files to 'artist - title.ext' format
+        - Provides detailed progress tracking and summary statistics
+        - Respects API rate limits with built-in delays and retry logic
+    """
     if not config or not ds:
         raise ValueError("config and ds parameters are required")
 
@@ -102,7 +129,3 @@ def update_tags_from_discogs(directory: Path, config=None, ds=None) -> None:
     logger.error(f"With Discogs info not found: {not_found}")
     logger.warning(f"Renamed: {renamed}\n")
     input("Press Enter to exit...")
-
-
-if __name__ == "__main__":
-    update_tags_from_discogs()

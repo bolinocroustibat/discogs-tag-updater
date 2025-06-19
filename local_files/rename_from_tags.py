@@ -8,7 +8,20 @@ from local_files.common import logger, get_audio_files, get_track_info
 
 
 def sanitize_filename(filename: str) -> str:
-    """Remove invalid characters from filename"""
+    """Remove invalid characters from filename.
+
+    Replaces characters that are not allowed in file names with underscores.
+    This ensures the filename is compatible with the file system.
+
+    Args:
+        filename: The original filename to sanitize.
+
+    Returns:
+        A sanitized filename with invalid characters replaced by underscores.
+
+    Note:
+        Invalid characters include: < > : " / \ | ? *
+    """
     # Replace invalid characters with underscore
     invalid_chars = r'[<>:"/\\|?*]'
     return re.sub(invalid_chars, "_", filename)
@@ -63,6 +76,27 @@ def rename_file(file_path: Path, artist: str, title: str) -> tuple[bool, bool]:
 
 
 def rename_files_from_tags() -> None:
+    """Rename music files based on their ID3 tags.
+
+    Main function that processes all audio files in the configured media directory.
+    For each file, extracts artist and title information from the file's metadata
+    and renames it to follow the 'artist - title.ext' format.
+
+    The function reads the media directory path from config.toml and processes
+    all supported audio files recursively. It provides user confirmation for
+    each rename operation and generates a summary of the results.
+
+    Raises:
+        SystemExit: If the configuration file is missing, invalid, or if the
+                   media directory doesn't exist.
+
+    Note:
+        - Reads media directory path from config.toml [local_files] section
+        - Processes all audio files in the directory and subdirectories
+        - Prompts user for confirmation before each rename
+        - Provides detailed logging and summary statistics
+        - Skips files that cannot be read or have missing tags
+    """
     # Get media directory from config
     config_path = Path("config.toml")
     if not config_path.is_file():
@@ -115,7 +149,3 @@ def rename_files_from_tags() -> None:
     logger.success(f"Files renamed: {renamed}")
     logger.info(f"Files already correctly named: {already_correct}")
     logger.warning(f"Files skipped: {skipped}")
-
-
-if __name__ == "__main__":
-    rename_files_from_tags()
