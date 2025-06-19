@@ -4,7 +4,8 @@ from pathlib import Path
 import re
 import inquirer
 
-from local_files.common import logger, get_audio_files, get_track_info
+from local_files.common import logger, get_music_files
+from local_files.music_file import MusicFile
 
 
 def sanitize_filename(filename: str) -> str:
@@ -13,38 +14,34 @@ def sanitize_filename(filename: str) -> str:
     Replaces characters that are not allowed in file names with underscores.
     This ensures the filename is compatible with the file system.
 
-    Args:
-        filename: The original filename to sanitize.
-
-    Returns:
-        A sanitized filename with invalid characters replaced by underscores.
-
-    Note:
-        Invalid characters include: < > : " / \ | ? *
+    Invalid characters include: < > : " / \ | ? *
     """
     # Replace invalid characters with underscore
     invalid_chars = r'[<>:"/\\|?*]'
     return re.sub(invalid_chars, "_", filename)
 
 
-def rename_file(file_path: Path, artist: str, title: str) -> tuple[bool, bool]:
+def rename_file(music_file: MusicFile) -> tuple[bool, bool]:
     """Rename file to 'artist - title.ext' format
+
+    Args:
+        music_file: MusicFile object containing path, artist, and title information
 
     Returns:
         tuple[bool, bool]: (was_renamed, was_skipped)
     """
     try:
         # Sanitize artist and title
-        artist = sanitize_filename(artist)
-        title = sanitize_filename(title)
+        artist = sanitize_filename(music_file.artist)
+        title = sanitize_filename(music_file.title)
 
         # Create new filename
-        new_name = f"{artist} - {title}{file_path.suffix}"
-        new_path = file_path.parent / new_name
+        new_name = f"{artist} - {title}{music_file.path.suffix}"
+        new_path = music_file.path.parent / new_name
 
         # Skip if filename is already correct
-        if file_path.name == new_name:
-            logger.info(f"File already correctly named: {file_path}")
+        if music_file.path.name == new_name:
+            logger.info(f"File already correctly named: {music_file.path}")
             return False, False
 
         # Check if target file already exists
@@ -56,22 +53,22 @@ def rename_file(file_path: Path, artist: str, title: str) -> tuple[bool, bool]:
         questions = [
             inquirer.Confirm(
                 "confirm",
-                message=f"Rename '{file_path.name}' to '{new_name}'?",
+                message=f"Rename '{music_file.path.name}' to '{new_name}'?",
                 default=True,
             ),
         ]
         answers = inquirer.prompt(questions)
         if not answers or not answers["confirm"]:
-            logger.info(f"Skipping rename of: {file_path}")
+            logger.info(f"Skipping rename of: {music_file.path}")
             return False, True
 
         # Rename file
-        file_path.rename(new_path)
-        logger.success(f"Renamed: {file_path.name} -> {new_name}")
+        music_file.path.rename(new_path)
+        logger.success(f"Renamed: {music_file.path.name} -> {new_name}")
         return True, False
 
     except Exception as e:
-        logger.error(f"Error renaming {file_path}: {e}")
+        logger.error(f"Error renaming {music_file.path}: {e}")
         return False, True
 
 
@@ -119,7 +116,7 @@ def rename_files_from_tags() -> None:
     logger.info(f"Using media directory: {media_path}")
 
     # Get all audio files
-    audio_files = get_audio_files(media_path)
+    audio_files: list[MusicFile] = get_music_files(media_path)
     if not audio_files:
         logger.error("No audio files found")
         sys.exit(1)
@@ -130,11 +127,10 @@ def rename_files_from_tags() -> None:
     renamed = 0
     skipped = 0
     already_correct = 0
-    for file_path in audio_files:
-        track_info = get_track_info(file_path)
-        if track_info:
-            artist, title = track_info
-            was_renamed, was_skipped = rename_file(file_path, artist, title)
+    for music_file in audio_files:
+        # Check if we have valid artist and title tags
+        if music_file.artist and music_file.title:
+            was_renamed, was_skipped = rename_file(music_file)
             if was_renamed:
                 renamed += 1
             elif was_skipped:
@@ -142,6 +138,7 @@ def rename_files_from_tags() -> None:
             else:
                 already_correct += 1
         else:
+            logger.warning(f"Missing artist or title tags in: {music_file.path}")
             skipped += 1
 
     # Print summary

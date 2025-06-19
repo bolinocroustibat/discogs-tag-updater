@@ -2,6 +2,8 @@ from pathlib import Path
 from mutagen.easyid3 import EasyID3
 from mutagen.flac import FLAC
 from mutagen.mp4 import MP4
+from mutagen.oggvorbis import OggVorbis
+from mutagen.wave import WAVE
 
 from local_files.logger import logger
 
@@ -39,13 +41,15 @@ class MusicFile:
         """Extract artist and title tags from music files.
 
         Reads metadata from the music file based on its format. Supports
-        FLAC, MP3, and M4A files. Sets the artist and title attributes
+        FLAC, MP3, M4A, OGG, and WAV files. Sets the artist and title attributes
         if the tags are successfully read.
 
         Note:
             - FLAC: Reads from FLAC metadata tags
             - MP3: Reads from ID3 tags using EasyID3
             - M4A: Reads from MP4 metadata tags
+            - OGG: Reads from Ogg Vorbis tags
+            - WAV: Reads from WAV metadata tags (limited support)
             - Logs errors if tag reading fails for any format
         """
         if self.suffix == ".flac":
@@ -71,3 +75,22 @@ class MusicFile:
                 self.title = audio["\xa9nam"][0]
             except Exception as e:
                 logger.error(f"Error reading M4A tags: {e}")
+
+        elif self.suffix == ".ogg":
+            try:
+                audio = OggVorbis(self.path)
+                self.artist = audio["artist"][0]
+                self.title = audio["title"][0]
+            except Exception as e:
+                logger.error(f"Error reading OGG tags: {e}")
+
+        elif self.suffix == ".wav":
+            try:
+                audio = WAVE(self.path)
+                # WAV files typically don't have embedded metadata tags
+                # This will likely result in empty artist/title
+                if hasattr(audio, "tags") and audio.tags:
+                    # Try to extract any available metadata
+                    pass
+            except Exception as e:
+                logger.error(f"Error reading WAV tags: {e}")

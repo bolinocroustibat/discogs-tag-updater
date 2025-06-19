@@ -1,5 +1,6 @@
 from pathlib import Path
 from local_files.logger import logger
+from local_files.music_file import MusicFile
 from mutagen._file import File
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
@@ -8,25 +9,15 @@ from mutagen.id3._util import ID3NoHeaderError
 AUDIO_FILES_EXTENSIONS = {".mp3", ".m4a", ".flac", ".ogg", ".wav"}
 
 
-def get_audio_files(directory: Path) -> list[Path]:
-    """Get all audio files in directory and subdirectories.
-
-    Recursively searches through the given directory and all its subdirectories
-    to find files with supported audio extensions.
-
-    Args:
-        directory: The root directory to search for audio files.
-
-    Returns:
-        A list of Path objects representing audio files found in the directory
-        and its subdirectories.
-
-    Note:
-        Supported audio formats: .mp3, .m4a, .flac, .ogg, .wav
-    """
+def get_music_files(directory: Path, recursive: bool = True) -> list[MusicFile]:
+    """Get all music files in directory and optionally subdirectories."""
+    if recursive:
+        files = directory.rglob("*")
+    else:
+        files = directory.glob("*")
     return [
-        f
-        for f in directory.rglob("*")
+        MusicFile(f)
+        for f in files
         if f.is_file() and f.suffix.lower() in AUDIO_FILES_EXTENSIONS
     ]
 

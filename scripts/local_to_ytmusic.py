@@ -39,9 +39,7 @@ def main() -> None:
     # Scan directory for music files
     music_files: list[MusicFile] = [
         MusicFile(p)
-        for p in sorted(
-            Path(config.media_path).glob("**/*"), key=lambda x: x.name.lower()
-        )
+        for p in sorted(config.media_path.rglob("*"), key=lambda x: x.name.lower())
         if p.suffix.lower() in [".flac", ".mp3", ".m4a"]
     ]
 
