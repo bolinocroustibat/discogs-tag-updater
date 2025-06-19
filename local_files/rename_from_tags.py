@@ -62,7 +62,7 @@ def rename_file(file_path: Path, artist: str, title: str) -> tuple[bool, bool]:
         return False, True
 
 
-def main() -> None:
+def rename_files_from_tags() -> None:
     # Get media directory from config
     config_path = Path("config.toml")
     if not config_path.is_file():
@@ -118,4 +118,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    rename_files_from_tags()

@@ -3,9 +3,7 @@ from mutagen.easyid3 import EasyID3
 from mutagen.flac import FLAC
 from mutagen.mp4 import MP4
 
-from logger import FileLogger
-
-logger = FileLogger("local_files/discogs.log")
+from local_files.logger import logger
 
 
 class MusicFile:

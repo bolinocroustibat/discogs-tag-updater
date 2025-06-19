@@ -5,8 +5,8 @@ import tomllib
 import discogs_client as dc
 
 from local_files.common import Config as DiscogsConfig, logger as discogs_logger
-from local_files.update_tags_from_discogs import main as update_tags_main
-from local_files.rename_from_tags import main as rename_files_main
+from local_files.update_tags import update_tags_from_discogs
+from local_files.rename_from_tags import rename_files_from_tags
 
 from spotify import Config as SpotifyConfig
 from ytmusic import Config as YTMusicConfig
@@ -234,14 +234,14 @@ def main() -> None:
         discogs_logger.info(f"\nUsing media directory: {media_path}\n")
 
     if action == "discogs_update":
-        update_tags_main(media_path, discogs_config, ds)
+        update_tags_from_discogs(media_path, discogs_config, ds)
     elif action == "discogs_rename":
-        rename_files_main()
+        rename_files_from_tags()
     elif action == "discogs_both":
         discogs_logger.info("\nStep 1: Updating ID3 tags from Discogs...")
-        update_tags_main(media_path, discogs_config, ds)
+        update_tags_from_discogs(media_path, discogs_config, ds)
         discogs_logger.info("\nStep 2: Renaming files using updated ID3 tags...")
-        rename_files_main()
+        rename_files_from_tags()
     elif action == "spotify_add":
         add_local_tracks_to_spotify()
     elif action == "ytmusic_add":

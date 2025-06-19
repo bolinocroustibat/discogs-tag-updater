@@ -1,6 +1,6 @@
 import tomllib
 from pathlib import Path
-from logger import FileLogger
+from local_files.logger import logger
 from mutagen._file import File
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
@@ -8,7 +8,6 @@ from mutagen.id3._util import ID3NoHeaderError
 
 TOML_PATH = Path("config.toml")
 AUDIO_FILES_EXTENSIONS = {".mp3", ".m4a", ".flac", ".ogg", ".wav"}
-logger = FileLogger(str(Path("local_files") / "local_files.log"))
 
 
 class Config:
