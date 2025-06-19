@@ -4,7 +4,7 @@ from spotify.logger import logger
 MAX_MATCHES_TO_DISPLAY = 4  # Maximum number of matches to show for each track
 
 
-def search_spotify_track(
+def search_track(
     sp: spotipy.Spotify, track_name: str, artist_name: str, file_name: str | None = None
 ) -> list[dict] | None:
     """Search for a track on Spotify using track name and artist.

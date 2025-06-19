@@ -10,17 +10,17 @@ from rich.progress import (
 )
 
 from spotify import (
-    Config,
+    Config as SpotifyConfig,
     setup_spotify,
-    select_playlist,
-    search_spotify_track,
-    select_match,
-    add_track_to_spotify,
+    select_playlist as select_spotify_playlist,
+    search_track as search_spotify_track,
+    select_match as select_spotify_match,
+    add_track as add_track_to_spotify,
 )
 from logger import FileLogger
 from local_files.music_file import MusicFile
 
-config = Config()
+config = SpotifyConfig()
 logger = FileLogger(Path("scripts") / "local_to_spotify.log")
 
 
@@ -29,7 +29,7 @@ def main() -> None:
     sp = setup_spotify()
 
     # Get playlist ID from config or user selection
-    playlist_id = select_playlist(sp, config.playlist_id)
+    playlist_id = select_spotify_playlist(sp, config.playlist_id)
 
     # Check if media path is set
     if not config.media_path:
@@ -39,7 +39,9 @@ def main() -> None:
     # Scan directory for music files
     music_files: list[MusicFile] = [
         MusicFile(p)
-        for p in sorted(config.media_path.rglob("*"), key=lambda x: x.name.lower())
+        for p in sorted(
+            Path(config.media_path).glob("**/*"), key=lambda x: x.name.lower()
+        )
         if p.suffix.lower() in [".flac", ".mp3", ".m4a"]
     ]
 
@@ -80,7 +82,7 @@ def main() -> None:
                 sp, music_file.title, music_file.artist, music_file.path.name
             )
             if matches:
-                track_id = select_match(sp, matches)
+                track_id = select_spotify_match(sp, matches)
                 if track_id:
                     if track_id in existing_tracks:
                         logger.warning(

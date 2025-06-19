@@ -12,17 +12,17 @@ import spotipy
 
 from spotify import (
     Config as SpotifyConfig,
+    add_track as add_track_to_spotify,
     setup_spotify,
-    select_playlist,
-    get_spotify_track_ids,
-    search_spotify_track,
-    add_track_to_spotify,
+    select_playlist as select_spotify_playlist,
+    get_playlist_track_ids as get_spotify_playlist_track_ids,
+    search_track as search_spotify_track,
 )
 from ytmusic import (
     Config as YTMusicConfig,
     setup_ytmusic,
     select_playlist as select_ytmusic_playlist,
-    get_ytmusic_track_details,
+    get_playlist_track_details as get_ytmusic_playlist_track_details,
 )
 from logger import FileLogger
 
@@ -141,13 +141,13 @@ def main() -> None:
     sp = setup_spotify()
 
     # Get Spotify playlist ID from config or user selection
-    spotify_playlist_id = select_playlist(sp, spotify_config.playlist_id)
+    spotify_playlist_id = select_spotify_playlist(sp, spotify_config.playlist_id)
 
     # Get tracks from YouTube Music playlist
-    tracks = get_ytmusic_track_details(ytm, ytmusic_playlist_id)
+    tracks = get_ytmusic_playlist_track_details(ytm, ytmusic_playlist_id)
 
     # Get existing tracks in Spotify playlist
-    existing_tracks = get_spotify_track_ids(sp, spotify_playlist_id)
+    existing_tracks = get_spotify_playlist_track_ids(sp, spotify_playlist_id)
 
     # Process tracks
     tracks_added, tracks_skipped = process_tracks(

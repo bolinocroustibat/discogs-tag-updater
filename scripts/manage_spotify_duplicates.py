@@ -5,7 +5,7 @@ from typing import TypedDict
 
 import spotipy
 
-from spotify import setup_spotify, select_playlist
+from spotify import setup_spotify, select_playlist as select_spotify_playlist
 from logger import FileLogger
 
 logger = FileLogger(Path("scripts") / "spotify_duplicates.log")
@@ -127,7 +127,7 @@ def main() -> None:
     sp = setup_spotify()
 
     # Get playlist ID from user selection
-    playlist_id = select_playlist(sp)
+    playlist_id: str = select_spotify_playlist(sp)
 
     duplicates = find_duplicates(sp, playlist_id)
 

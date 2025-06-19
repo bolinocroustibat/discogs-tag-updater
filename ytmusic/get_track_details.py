@@ -3,7 +3,7 @@ import sys
 from ytmusic.logger import logger
 
 
-def get_ytmusic_track_details(ytm: YTMusic, ytmusic_playlist_id: str) -> list[dict]:
+def get_playlist_track_details(ytm: YTMusic, ytmusic_playlist_id: str) -> list[dict]:
     """
     Get track details (name, artist) from a YouTube Music playlist or Liked Music.
 

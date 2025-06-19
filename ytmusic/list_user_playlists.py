@@ -34,6 +34,9 @@ def list_user_playlists(ytm: YTMusic) -> list[YTMusicPlaylistInfo]:
             }
             user_playlists.append(playlist_info)
 
+        # Sort playlists alphabetically by name (case-insensitive)
+        user_playlists.sort(key=lambda x: x["name"].lower())
+
         return user_playlists
 
     except Exception as e:

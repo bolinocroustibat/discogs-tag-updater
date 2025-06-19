@@ -3,7 +3,7 @@ import time
 from spotify.logger import logger
 
 
-def add_track_to_spotify(
+def add_track(
     sp: spotipy.Spotify,
     track_id: str,
     spotify_playlist_id: str,

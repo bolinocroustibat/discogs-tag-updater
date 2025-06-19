@@ -1,15 +1,11 @@
-from ytmusicapi import YTMusic
 from ytmusic.logger import logger
 
 
-def select_match(
-    ytm: YTMusic, matches: list[dict], auto_first: bool = False
-) -> str | None:
+def select_match(matches: list[dict], auto_first: bool = False) -> str | None:
     """
     Let the user select a match from a list of potential YouTube Music matches.
 
     Args:
-        ytm: Authenticated YTMusic client instance.
         matches: List of potential matches, each with id, name, and artist.
         auto_first: If True, automatically select the first match without prompting.
 

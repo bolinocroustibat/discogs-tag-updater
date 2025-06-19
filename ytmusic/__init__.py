@@ -6,12 +6,12 @@ from ytmusic.check_ytmusic_setup_browser import check_ytmusic_setup_browser
 from ytmusic.choose_auth_method import choose_auth_method
 from ytmusic.list_user_playlists import list_user_playlists
 from ytmusic.select_playlist import select_playlist
-from ytmusic.get_ytmusic_track_details import get_ytmusic_track_details
-from ytmusic.get_ytmusic_track_ids import get_ytmusic_track_ids
+from ytmusic.get_track_details import get_playlist_track_details
+from ytmusic.get_track_ids import get_playlist_track_ids
 from ytmusic.create_playlist import create_playlist
-from ytmusic.search_ytmusic_track import search_ytmusic_track
+from ytmusic.search_track import search_track
 from ytmusic.select_match import select_match
-from ytmusic.add_track_to_ytmusic import add_track_to_ytmusic
+from ytmusic.add_track import add_track_to_ytmusic
 from ytmusic.logger import logger as ytmusic_logger
 
 __all__ = [
@@ -24,10 +24,10 @@ __all__ = [
     "choose_auth_method",
     "list_user_playlists",
     "select_playlist",
-    "get_ytmusic_track_details",
-    "get_ytmusic_track_ids",
+    "get_playlist_track_details",
+    "get_playlist_track_ids",
     "create_playlist",
-    "search_ytmusic_track",
+    "search_track",
     "select_match",
     "add_track_to_ytmusic",
 ]

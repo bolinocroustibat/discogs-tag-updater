@@ -2,7 +2,7 @@ from ytmusicapi import YTMusic
 from ytmusic.logger import logger
 
 
-def get_ytmusic_track_ids(ytm: YTMusic, ytmusic_playlist_id: str) -> set[str]:
+def get_playlist_track_ids(ytm: YTMusic, ytmusic_playlist_id: str) -> set[str]:
     """
     Get all track video IDs from a YouTube Music playlist.
 

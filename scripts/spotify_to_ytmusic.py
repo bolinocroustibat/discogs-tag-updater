@@ -14,15 +14,15 @@ from spotify import (
     Config as SpotifyConfig,
     setup_spotify,
     select_playlist as select_spotify_playlist,
-    get_spotify_track_details,
+    get_playlist_track_details as get_spotify_playlist_track_details,
 )
 from ytmusic import (
     Config as YTMusicConfig,
     setup_ytmusic,
     select_playlist as select_ytmusic_playlist,
-    get_ytmusic_track_ids,
-    search_ytmusic_track,
-    select_match,
+    get_playlist_track_ids as get_ytmusic_playlist_track_ids,
+    search_track as search_ytmusic_track,
+    select_match as select_ytmusic_match,
     add_track_to_ytmusic,
 )
 from logger import FileLogger
@@ -60,7 +60,7 @@ def process_tracks(
 
             matches = search_ytmusic_track(ytm, track_name, artist_name)
             if matches:
-                video_id = select_match(ytm, matches, auto_first)
+                video_id = select_ytmusic_match(ytm, matches, auto_first)
                 if video_id:
                     if video_id in existing_tracks:
                         logger.warning(
@@ -100,10 +100,10 @@ def main() -> None:
     spotify_playlist_id = select_spotify_playlist(sp, spotify_config.playlist_id)
 
     # Get tracks from Spotify playlist
-    tracks = get_spotify_track_details(sp, spotify_playlist_id)
+    tracks = get_spotify_playlist_track_details(sp, spotify_playlist_id)
 
     # Get existing tracks in YouTube Music playlist
-    existing_tracks = get_ytmusic_track_ids(ytm, ytmusic_playlist_id)
+    existing_tracks = get_ytmusic_playlist_track_ids(ytm, ytmusic_playlist_id)
 
     # Process tracks
     tracks_added, tracks_skipped = process_tracks(

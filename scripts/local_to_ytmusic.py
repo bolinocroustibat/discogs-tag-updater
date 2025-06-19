@@ -10,17 +10,17 @@ from rich.progress import (
 )
 
 from ytmusic import (
-    Config,
+    Config as YTMusicConfig,
     setup_ytmusic,
-    select_playlist,
-    search_ytmusic_track,
-    select_match,
+    select_playlist as select_ytmusic_playlist,
+    search_track as search_ytmusic_track,
+    select_match as select_ytmusic_match,
     add_track_to_ytmusic,
 )
 from logger import FileLogger
 from local_files.music_file import MusicFile
 
-config = Config()
+config = YTMusicConfig()
 logger = FileLogger(Path("scripts") / "local_to_ytmusic.log")
 
 
@@ -29,7 +29,7 @@ def main() -> None:
     ytm = setup_ytmusic()
 
     # Get playlist ID from config or user selection
-    playlist_id = select_playlist(ytm, config.playlist_id)
+    playlist_id: str = select_ytmusic_playlist(ytm, config.playlist_id)
 
     # Check if media path is set
     if not config.media_path:
@@ -75,7 +75,7 @@ def main() -> None:
                 ytm, music_file.title, music_file.artist, music_file.path.name
             )
             if matches:
-                track_id = select_match(ytm, matches)
+                track_id = select_ytmusic_match(ytm, matches)
                 if track_id:
                     if track_id in existing_tracks:
                         logger.warning(
