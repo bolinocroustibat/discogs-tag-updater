@@ -18,7 +18,7 @@ from spotify import (
     add_track as add_track_to_spotify,
 )
 from logger import FileLogger
-from local_files.music_file import MusicFile
+from local_files import get_music_files, MusicFile
 
 config = SpotifyConfig()
 logger = FileLogger(Path("scripts") / "local_to_spotify.log")
@@ -37,13 +37,7 @@ def main() -> None:
         sys.exit(1)
 
     # Scan directory for music files
-    music_files: list[MusicFile] = [
-        MusicFile(p)
-        for p in sorted(
-            Path(config.media_path).glob("**/*"), key=lambda x: x.name.lower()
-        )
-        if p.suffix.lower() in [".flac", ".mp3", ".m4a"]
-    ]
+    music_files: list[MusicFile] = get_music_files(config.media_path)
 
     logger.info(f"Found {len(music_files)} music files in {config.media_path}")
 

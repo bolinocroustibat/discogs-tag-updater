@@ -18,7 +18,7 @@ from ytmusic import (
     add_track_to_ytmusic,
 )
 from logger import FileLogger
-from local_files.music_file import MusicFile
+from local_files import get_music_files, MusicFile
 
 config = YTMusicConfig()
 logger = FileLogger(Path("scripts") / "local_to_ytmusic.log")
@@ -37,11 +37,7 @@ def main() -> None:
         sys.exit(1)
 
     # Scan directory for music files
-    music_files: list[MusicFile] = [
-        MusicFile(p)
-        for p in sorted(config.media_path.rglob("*"), key=lambda x: x.name.lower())
-        if p.suffix.lower() in [".flac", ".mp3", ".m4a"]
-    ]
+    music_files: list[MusicFile] = get_music_files(config.media_path)
 
     logger.info(f"Found {len(music_files)} music files in {config.media_path}")
 
