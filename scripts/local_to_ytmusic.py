@@ -75,7 +75,7 @@ def main() -> None:
                 ytm, music_file.title, music_file.artist, music_file.path.name
             )
             if matches:
-                track_id = select_ytmusic_match(ytm, matches)
+                track_id = select_ytmusic_match(matches)
                 if track_id:
                     if track_id in existing_tracks:
                         logger.warning(

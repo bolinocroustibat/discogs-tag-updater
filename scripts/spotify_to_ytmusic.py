@@ -60,7 +60,7 @@ def process_tracks(
 
             matches = search_ytmusic_track(ytm, track_name, artist_name)
             if matches:
-                video_id = select_ytmusic_match(ytm, matches, auto_first)
+                video_id = select_ytmusic_match(matches, auto_first)
                 if video_id:
                     if video_id in existing_tracks:
                         logger.warning(
