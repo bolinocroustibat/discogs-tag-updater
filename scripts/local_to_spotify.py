@@ -13,7 +13,7 @@ from spotify import (
     Config,
     setup_spotify,
     select_playlist,
-    search_spotify,
+    search_spotify_track,
     select_match,
     add_track_to_spotify,
 )
@@ -78,7 +78,7 @@ def main() -> None:
     ) as progress:
         task = progress.add_task("Processing files...", total=len(music_files))
         for music_file in music_files:
-            matches = search_spotify(
+            matches = search_spotify_track(
                 sp, music_file.title, music_file.artist, music_file.path.name
             )
             if matches:

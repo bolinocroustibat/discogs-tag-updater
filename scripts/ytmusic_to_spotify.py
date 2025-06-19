@@ -15,7 +15,7 @@ from spotify import (
     setup_spotify,
     select_playlist,
     get_spotify_track_ids,
-    search_spotify,
+    search_spotify_track,
     add_track_to_spotify,
 )
 from ytmusic import (
@@ -62,7 +62,7 @@ def process_tracks(
                 sp: spotipy.Spotify, track_name: str, artist_name: str
             ) -> str | None:
                 nonlocal auto_first, retry_delay
-                matches = search_spotify(sp, track_name, artist_name)
+                matches = search_spotify_track(sp, track_name, artist_name)
                 if not matches:
                     return None
 

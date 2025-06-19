@@ -21,7 +21,7 @@ from ytmusic import (
     setup_ytmusic,
     select_playlist as select_ytmusic_playlist,
     get_ytmusic_track_ids,
-    search_ytmusic_tracks,
+    search_ytmusic_track,
     select_match,
     add_track_to_ytmusic,
 )
@@ -58,7 +58,7 @@ def process_tracks(
             track_name = track["name"]
             artist_name = track["artist"]
 
-            matches = search_ytmusic_tracks(ytm, track_name, artist_name)
+            matches = search_ytmusic_track(ytm, track_name, artist_name)
             if matches:
                 video_id = select_match(ytm, matches, auto_first)
                 if video_id:

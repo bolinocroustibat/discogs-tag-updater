@@ -5,7 +5,7 @@ MAX_MATCHES_TO_DISPLAY = 4  # Maximum number of matches to show for each track
 logger = FileLogger("spotify/spotify.log")
 
 
-def search_spotify(
+def search_spotify_track(
     sp: spotipy.Spotify, track_name: str, artist_name: str, file_name: str | None = None
 ) -> list[dict] | None:
     """Search for a track on Spotify using track name and artist.
@@ -41,7 +41,7 @@ def search_spotify(
     query = f"track:{track_name} artist:{artist_name}"
     if file_name:
         logger.info(f'\nLocal file: "{file_name}"')
-    logger.info(f'\nSearching Spotify for "{track_name} - {artist_name}"')
+    logger.info(f'\nSearching Spotify for "{artist_name} - {track_name}"')
 
     try:
         results = sp.search(query, type="track", limit=5)

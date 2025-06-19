@@ -10,7 +10,7 @@ from ytmusic.select_playlist import select_playlist
 from ytmusic.get_ytmusic_track_details import get_ytmusic_track_details
 from ytmusic.get_ytmusic_track_ids import get_ytmusic_track_ids
 from ytmusic.create_playlist import create_playlist
-from ytmusic.search_ytmusic_tracks import search_ytmusic_tracks
+from ytmusic.search_ytmusic_track import search_ytmusic_track
 from ytmusic.select_match import select_match
 from ytmusic.add_track_to_ytmusic import add_track_to_ytmusic
 
@@ -26,7 +26,7 @@ __all__ = [
     "get_ytmusic_track_details",
     "get_ytmusic_track_ids",
     "create_playlist",
-    "search_ytmusic_tracks",
+    "search_ytmusic_track",
     "select_match",
     "add_track_to_ytmusic",
 ]

@@ -7,7 +7,7 @@ MAX_MATCHES_TO_DISPLAY = 4  # Maximum number of matches to show for each track
 logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
 
 
-def search_ytmusic_tracks(
+def search_ytmusic_track(
     ytm: YTMusic, track_name: str, artist_name: str, file_name: str | None = None
 ) -> list[dict] | None:
     """
