@@ -10,16 +10,26 @@ logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
 def search_ytmusic_tracks(
     ytm: YTMusic, track_name: str, artist_name: str, file_name: str | None = None
 ) -> list[dict] | None:
-    """Search for track on YouTube Music and return list of potential matches
+    """
+    Search for a track on YouTube Music using track name and artist.
 
     Args:
-        ytm: YouTube Music client
-        track_name: Name of the track
-        artist_name: Name of the artist
-        file_name: Optional name of the local file (for logging purposes)
+        ytm: Authenticated YTMusic client instance.
+        track_name: Name of the track to search for.
+        artist_name: Name of the artist to search for.
+        file_name: Optional name of the local file being processed (for logging).
 
     Returns:
-        list[dict] | None: List of potential matches with id, name, and artist, or None if no matches
+        list[dict] | None: List of potential matches, each containing:
+            - id: YouTube Music video ID
+            - name: Track title
+            - artist: Artist name
+            Returns None if no matches found or search fails.
+
+    Notes:
+        - Maximum of 4 matches are returned (MAX_MATCHES_TO_DISPLAY).
+        - Retries up to 3 times on rate limit errors, with exponential backoff.
+        - If track_name or artist_name is empty, returns None immediately.
     """
     if not track_name or not artist_name:
         if file_name:

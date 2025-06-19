@@ -1,13 +1,35 @@
 import spotipy
 import inquirer
-from .list_user_playlists import list_user_playlists
+from spotify.list_user_playlists import list_user_playlists
 from logger import FileLogger
 
 logger = FileLogger("spotify/spotify.log")
 
 
 def select_playlist(sp: spotipy.Spotify, playlist_id: str | None = None) -> str:
-    """Get playlist ID from config or prompt user to select one"""
+    """Select a Spotify playlist for operations.
+
+    Either uses a pre-configured playlist ID or prompts the user to select
+    from their owned playlists. Supports special handling for "Liked Songs".
+
+    Args:
+        sp: Authenticated Spotify client instance
+        playlist_id: Optional pre-configured playlist ID to use directly.
+            If "liked", uses the user's Liked Songs playlist.
+
+    Returns:
+        str: The selected playlist ID
+
+    Raises:
+        Exception: If no playlists are found for the user
+        KeyboardInterrupt: If user cancels the selection process
+        Exception: If the specified playlist_id is invalid or inaccessible
+
+    Note:
+        If playlist_id is provided but invalid, the function falls back
+        to interactive playlist selection. The "liked" playlist_id is
+        a special case that refers to the user's Liked Songs.
+    """
     if playlist_id:
         try:
             if playlist_id == "liked":

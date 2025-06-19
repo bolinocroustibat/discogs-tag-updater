@@ -12,7 +12,23 @@ def add_track_to_ytmusic(
     ytmusic_playlist_id: str,
     retry_delay: int,
 ) -> tuple[bool, int]:
-    """Add track to YouTube Music playlist with retry logic"""
+    """
+    Add a track to a YouTube Music playlist with retry logic for rate limits.
+
+    Args:
+        ytm: Authenticated YTMusic client instance.
+        video_id: YouTube Music video ID to add.
+        ytmusic_playlist_id: Target playlist ID, or "LM" for Liked Music.
+        retry_delay: Initial delay (in seconds) between retries on rate limit.
+
+    Returns:
+        tuple[bool, int]: (success, final retry_delay). Success is True if the track was added.
+
+    Notes:
+        - Retries up to 3 times on rate limit errors, with exponential backoff.
+        - Returns False if all retries fail or another error occurs.
+        - Uses `rate_song` for Liked Music, `add_playlist_items` for regular playlists.
+    """
     max_retries = 3
     for attempt in range(max_retries):
         try:

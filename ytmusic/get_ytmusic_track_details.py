@@ -7,7 +7,23 @@ logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
 
 
 def get_ytmusic_track_details(ytm: YTMusic, ytmusic_playlist_id: str) -> list[dict]:
-    """Get track details (name, artist) from YouTube Music playlist for searching"""
+    """
+    Get track details (name, artist) from a YouTube Music playlist or Liked Music.
+
+    Args:
+        ytm: Authenticated YTMusic client instance.
+        ytmusic_playlist_id: Playlist ID or "LM" for Liked Music.
+
+    Returns:
+        list[dict]: List of tracks, each with "name" and "artist" keys.
+
+    Raises:
+        SystemExit: If fetching fails or no tracks are found.
+
+    Notes:
+        - Exits if no tracks are found or an error occurs.
+        - Handles both regular playlists and Liked Music.
+    """
     logger.info(
         f'Fetching tracks from YouTube Music playlist "{ytmusic_playlist_id}"...'
     )

@@ -1,6 +1,6 @@
 from ytmusicapi import YTMusic
 import inquirer
-from .list_user_playlists import list_user_playlists
+from ytmusic.list_user_playlists import list_user_playlists
 from logger import FileLogger
 from pathlib import Path
 
@@ -8,7 +8,30 @@ logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
 
 
 def select_playlist(ytm: YTMusic, playlist_id: str | None = None) -> str:
-    """Get playlist ID from config or prompt user to select one"""
+    """
+    Select a YouTube Music playlist for operations.
+
+    Either uses a pre-configured playlist ID or prompts the user to select
+    from their owned playlists. Supports special handling for "Liked Music".
+
+    Args:
+        ytm: Authenticated YTMusic client instance.
+        playlist_id: Optional pre-configured playlist ID to use directly.
+            If "LM", uses the user's Liked Music playlist.
+
+    Returns:
+        str: The selected playlist ID.
+
+    Raises:
+        Exception: If no playlists are found for the user.
+        KeyboardInterrupt: If user cancels the selection process.
+        Exception: If the specified playlist_id is invalid or inaccessible.
+
+    Notes:
+        If playlist_id is provided but invalid, the function falls back
+        to interactive playlist selection. The "LM" playlist_id is
+        a special case that refers to the user's Liked Music.
+    """
     if playlist_id:
         try:
             if playlist_id == "LM":

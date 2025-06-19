@@ -1,6 +1,6 @@
 from pathlib import Path
 import sys
-from .config import Config
+from ytmusic.config import Config
 from logger import FileLogger
 
 OAUTH_PATH = Path("ytmusic") / "oauth.json"
@@ -8,7 +8,20 @@ logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
 
 
 def check_ytmusic_setup_oauth() -> None:
-    """Check if YouTube Music is properly set up using OAuth"""
+    """
+    Check if YouTube Music OAuth authentication is properly configured.
+
+    Verifies that OAuth credentials are set up in config.toml and that
+    the oauth.json file exists with valid authentication tokens.
+
+    Raises:
+        SystemExit: If OAuth setup is incomplete or invalid.
+
+    Notes:
+        - Checks for client_id and client_secret in config.toml.
+        - Verifies oauth.json file exists.
+        - Provides detailed setup instructions if configuration is missing.
+    """
     config = Config()
     if not config.client_id or not config.client_secret:
         logger.error("YouTube Music OAuth credentials not set up.")

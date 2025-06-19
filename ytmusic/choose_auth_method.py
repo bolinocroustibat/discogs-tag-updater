@@ -6,7 +6,19 @@ logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
 
 
 def choose_auth_method() -> str:
-    """Let user choose between OAuth and browser cookie authentication"""
+    """
+    Let the user choose between OAuth and browser cookie authentication.
+
+    Returns:
+        str: The chosen authentication method ("oauth" or "browser").
+
+    Raises:
+        KeyboardInterrupt: If user cancels the selection process.
+
+    Notes:
+        - OAuth is recommended for better reliability and security.
+        - Browser authentication uses saved cookies from a browser session.
+    """
     questions = [
         inquirer.List(
             "auth_method",

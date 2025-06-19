@@ -8,15 +8,21 @@ logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
 def select_match(
     ytm: YTMusic, matches: list[dict], auto_first: bool = False
 ) -> str | None:
-    """Let user select a match from the list of potential matches
+    """
+    Let the user select a match from a list of potential YouTube Music matches.
 
     Args:
-        ytm: YouTube Music client
-        matches: List of potential matches with id, name, and artist
-        auto_first: If True, automatically select the first match
+        ytm: Authenticated YTMusic client instance.
+        matches: List of potential matches, each with id, name, and artist.
+        auto_first: If True, automatically select the first match without prompting.
 
     Returns:
-        str | None: Selected video ID or None if skipped/invalid
+        str | None: Selected video ID, or None if skipped or invalid.
+
+    Notes:
+        - Prompts the user to select a match by number or skip.
+        - Returns None if the user skips or makes an invalid selection.
+        - When auto_first is True, automatically selects the first match.
     """
     # Show all potential matches
     logger.info("\nPotential matches from YouTube Music:")

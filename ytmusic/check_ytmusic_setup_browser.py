@@ -7,7 +7,20 @@ logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
 
 
 def check_ytmusic_setup_browser() -> None:
-    """Check if YouTube Music is properly set up using browser cookies"""
+    """
+    Check if YouTube Music browser authentication is properly configured.
+
+    Verifies that the browser.json file exists with valid browser cookies
+    for YouTube Music authentication.
+
+    Raises:
+        SystemExit: If browser setup is incomplete or invalid.
+
+    Notes:
+        - Checks for browser.json file in the ytmusic directory.
+        - Provides setup instructions if the file is missing.
+        - References external documentation for detailed setup steps.
+    """
     if not BROWSER_PATH.is_file():
         logger.error("browser.json file not found.")
         logger.info("\nTo set up YouTube Music browser authentication:")

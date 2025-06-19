@@ -6,7 +6,24 @@ logger = FileLogger("spotify/spotify.log")
 
 
 def list_user_playlists(sp: spotipy.Spotify) -> list[SpotifyPlaylistInfo]:
-    """Get all user playlists from Spotify"""
+    """Retrieve all playlists owned by the authenticated user.
+
+    Fetches all playlists that the authenticated user owns from Spotify.
+    This includes both public and private playlists, but excludes playlists
+    owned by other users that the user follows.
+
+    Args:
+        sp: Authenticated Spotify client instance
+
+    Returns:
+        list[SpotifyPlaylistInfo]: List of playlist information dictionaries,
+            each containing name, id, and track_count. Returns empty list
+            if an error occurs.
+
+    Note:
+        This function only returns playlists owned by the authenticated user.
+        Playlists followed from other users are not included in the results.
+    """
     logger.info("Fetching your Spotify playlists...")
 
     try:

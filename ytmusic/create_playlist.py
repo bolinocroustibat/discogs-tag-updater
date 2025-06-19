@@ -6,18 +6,23 @@ logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
 
 
 def create_playlist(ytm: YTMusic, name: str, description: str = "") -> str:
-    """Create a new YouTube Music playlist
+    """
+    Create a new YouTube Music playlist.
 
     Args:
-        ytm: YouTube Music client
-        name: Name of the playlist
-        description: Optional description for the playlist
+        ytm: Authenticated YTMusic client instance.
+        name: Name of the playlist to create.
+        description: Optional description for the playlist.
 
     Returns:
-        str: ID of the created playlist
+        str: ID of the created playlist.
 
     Raises:
-        Exception: If playlist creation fails
+        Exception: If playlist creation fails or response is invalid.
+
+    Notes:
+        - The playlist will be created under the authenticated user's account.
+        - Returns the playlist ID which can be used for future operations.
     """
     try:
         logger.info(f'Creating new YouTube Music playlist "{name}"...')

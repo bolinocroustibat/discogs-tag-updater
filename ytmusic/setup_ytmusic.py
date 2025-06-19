@@ -1,9 +1,9 @@
 from ytmusicapi import YTMusic, OAuthCredentials
 from pathlib import Path
-from .config import Config
-from .check_ytmusic_setup_oauth import check_ytmusic_setup_oauth
-from .check_ytmusic_setup_browser import check_ytmusic_setup_browser
-from .choose_auth_method import choose_auth_method
+from ytmusic.config import Config
+from ytmusic.check_ytmusic_setup_oauth import check_ytmusic_setup_oauth
+from ytmusic.check_ytmusic_setup_browser import check_ytmusic_setup_browser
+from ytmusic.choose_auth_method import choose_auth_method
 from logger import FileLogger
 
 OAUTH_PATH = Path("ytmusic") / "oauth.json"
@@ -12,7 +12,24 @@ logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
 
 
 def setup_ytmusic() -> YTMusic:
-    """Initialize YouTube Music client"""
+    """
+    Initialize and authenticate YouTube Music client.
+
+    Sets up a YTMusic client using either OAuth or browser cookie authentication
+    based on user preference and available credentials.
+
+    Returns:
+        YTMusic: Authenticated YTMusic client instance.
+
+    Raises:
+        Exception: If authentication fails or configuration is invalid.
+
+    Notes:
+        - Prompts user to choose between OAuth and browser authentication.
+        - OAuth requires client_id and client_secret in config.toml.
+        - Browser authentication requires browser.json file with cookies.
+        - OAuth is recommended for better reliability and security.
+    """
     auth_method = choose_auth_method()
 
     if auth_method == "oauth":

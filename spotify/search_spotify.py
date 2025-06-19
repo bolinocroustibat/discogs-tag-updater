@@ -8,16 +8,30 @@ logger = FileLogger("spotify/spotify.log")
 def search_spotify(
     sp: spotipy.Spotify, track_name: str, artist_name: str, file_name: str | None = None
 ) -> list[dict] | None:
-    """Search for track on Spotify and return list of potential matches
+    """Search for a track on Spotify using track name and artist.
+
+    Performs a Spotify search using the track name and artist name to find
+    potential matches. The search uses Spotify's search API with specific
+    track and artist filters for better accuracy.
 
     Args:
-        sp: Spotify client
-        track_name: Name of the track
-        artist_name: Name of the artist
-        file_name: Optional name of the local file (for logging purposes)
+        sp: Authenticated Spotify client instance
+        track_name: Name of the track to search for
+        artist_name: Name of the artist to search for
+        file_name: Optional name of the local file being processed (for logging)
 
     Returns:
-        list[dict] | None: List of potential matches with id, name, and artist, or None if no matches
+        list[dict] | None: List of potential matches, each containing:
+            - id: Spotify track ID
+            - name: Track name
+            - artist: Artist name
+            Returns None if no matches found or search fails.
+
+    Note:
+        - Maximum of 4 matches are returned (MAX_MATCHES_TO_DISPLAY)
+        - Search query format: "track:{track_name} artist:{artist_name}"
+        - Only tracks with valid name and artist fields are included in results
+        - If track_name or artist_name is empty, returns None immediately
     """
     if not track_name or not artist_name:
         if file_name:
