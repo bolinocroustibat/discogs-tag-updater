@@ -1,6 +1,5 @@
 import sys
 from pathlib import Path
-import time
 
 from rich.progress import (
     Progress,
@@ -17,6 +16,7 @@ from spotify.common import (
     select_playlist,
     search_spotify,
     select_match,
+    add_track_to_spotify,
 )
 from local_files.music_file import MusicFile
 
@@ -91,13 +91,10 @@ def main() -> None:
                         progress.advance(task)
                         continue
 
-                    try:
-                        sp.playlist_add_items(playlist_id, [track_id])
-                        logger.success("Track added to Spotify playlist.")
+                    success, _ = add_track_to_spotify(sp, track_id, playlist_id, 1)
+                    if success:
                         tracks_added += 1
-                        time.sleep(1)  # Rate limiting
-                    except Exception as e:
-                        logger.error(f"Error adding to Spotify playlist: {e}")
+                    else:
                         tracks_skipped += 1
                 else:
                     tracks_skipped += 1

@@ -1,6 +1,5 @@
 import sys
 from pathlib import Path
-import time
 
 from rich.progress import (
     Progress,
@@ -17,6 +16,7 @@ from ytmusic.common import (
     select_playlist,
     search_ytmusic_tracks,
     select_match,
+    add_track_to_ytmusic,
 )
 from local_files.music_file import MusicFile
 
@@ -86,13 +86,10 @@ def main() -> None:
                         progress.advance(task)
                         continue
 
-                    try:
-                        ytm.add_playlist_items(playlist_id, [track_id])
-                        logger.success("Track added to YouTube Music playlist.")
+                    success, _ = add_track_to_ytmusic(ytm, track_id, playlist_id, 1)
+                    if success:
                         tracks_added += 1
-                        time.sleep(1)  # Rate limiting
-                    except Exception as e:
-                        logger.error(f"Error adding to YouTube Music playlist: {e}")
+                    else:
                         tracks_skipped += 1
                 else:
                     tracks_skipped += 1

@@ -11,10 +11,10 @@ from local_files.rename_from_tags import main as rename_files_main
 from spotify.common import Config as SpotifyConfig
 from spotify.add_local_tracks import main as add_tracks_main
 from spotify.manage_duplicates import main as manage_spotify_duplicates_main
-from spotify.import_from_ytmusic import main as import_from_ytmusic_main
+from spotify.ytmusic_to_spotify import main as import_from_ytmusic_main
 
 from ytmusic.common import Config as YTMusicConfig
-from ytmusic.import_from_spotify import main as import_from_spotify_main
+from ytmusic.spotify_to_ytmusic import main as import_from_spotify_main
 from ytmusic.manage_duplicates import main as manage_ytmusic_duplicates_main
 from ytmusic.add_local_tracks import main as add_ytmusic_tracks_main
 
