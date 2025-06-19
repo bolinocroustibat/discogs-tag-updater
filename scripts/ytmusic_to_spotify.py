@@ -10,21 +10,23 @@ from rich.progress import (
 )
 import spotipy
 
-from spotify.common import (
+from spotify import (
     Config as SpotifyConfig,
     setup_spotify,
-    select_playlist as select_spotify_playlist,
+    select_playlist,
     get_spotify_track_ids,
-    logger,
     search_spotify,
     add_track_to_spotify,
 )
-from ytmusic.common import (
+from ytmusic import (
     Config as YTMusicConfig,
     setup_ytmusic,
     select_playlist as select_ytmusic_playlist,
     get_ytmusic_track_details,
 )
+from logger import FileLogger
+
+logger = FileLogger("scripts/ytmusic_to_spotify.log")
 
 spotify_config = SpotifyConfig()
 ytmusic_config = YTMusicConfig()
@@ -139,7 +141,7 @@ def main() -> None:
     sp = setup_spotify()
 
     # Get Spotify playlist ID from config or user selection
-    spotify_playlist_id = select_spotify_playlist(sp, spotify_config.playlist_id)
+    spotify_playlist_id = select_playlist(sp, spotify_config.playlist_id)
 
     # Get tracks from YouTube Music playlist
     tracks = get_ytmusic_track_details(ytm, ytmusic_playlist_id)

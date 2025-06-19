@@ -5,7 +5,10 @@ from typing import TypedDict
 
 import spotipy
 
-from spotify.common import setup_spotify, logger, select_playlist
+from spotify import setup_spotify, select_playlist
+from logger import FileLogger
+
+logger = FileLogger("scripts/spotify_duplicates.log")
 
 
 class TrackInstance(TypedDict):

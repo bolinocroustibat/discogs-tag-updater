@@ -8,15 +8,15 @@ from local_files.common import Config as DiscogsConfig, logger as discogs_logger
 from local_files.update_tags_from_discogs import main as update_tags_main
 from local_files.rename_from_tags import main as rename_files_main
 
-from spotify.common import Config as SpotifyConfig
-from spotify.add_local_tracks import main as add_tracks_main
-from spotify.manage_duplicates import main as manage_spotify_duplicates_main
-from spotify.ytmusic_to_spotify import main as import_from_ytmusic_main
-
-from ytmusic.common import Config as YTMusicConfig
-from ytmusic.spotify_to_ytmusic import main as import_from_spotify_main
-from ytmusic.manage_duplicates import main as manage_ytmusic_duplicates_main
-from ytmusic.add_local_tracks import main as add_ytmusic_tracks_main
+from spotify import Config as SpotifyConfig
+from ytmusic import Config as YTMusicConfig
+from scripts import (
+    add_local_tracks_to_spotify,
+    add_local_tracks_to_ytmusic,
+    import_ytmusic_to_spotify,
+    import_spotify_to_ytmusic,
+    manage_spotify_duplicates,
+)
 
 CONFIG_PATH = Path("config.toml")
 
@@ -208,10 +208,6 @@ def main() -> None:
                     "🟢  ➡️  🔴  Import tracks from Spotify playlist to YouTube Music Playlist",
                     "ytmusic_import",
                 ),
-                (
-                    "🔴  🧹  Find and remove duplicate tracks in YouTube Music playlist",
-                    "ytmusic_duplicates",
-                ),
             ],
         ),
     ]
@@ -247,17 +243,15 @@ def main() -> None:
         discogs_logger.info("\nStep 2: Renaming files using updated ID3 tags...")
         rename_files_main()
     elif action == "spotify_add":
-        add_tracks_main()
+        add_local_tracks_to_spotify()
     elif action == "ytmusic_add":
-        add_ytmusic_tracks_main()
+        add_local_tracks_to_ytmusic()
     elif action == "spotify_import":
-        import_from_ytmusic_main()
+        import_ytmusic_to_spotify()
     elif action == "spotify_duplicates":
-        manage_spotify_duplicates_main()
+        manage_spotify_duplicates()
     elif action == "ytmusic_import":
-        import_from_spotify_main()
-    elif action == "ytmusic_duplicates":
-        manage_ytmusic_duplicates_main()
+        import_spotify_to_ytmusic()
 
 
 if __name__ == "__main__":

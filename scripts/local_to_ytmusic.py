@@ -9,18 +9,19 @@ from rich.progress import (
     TaskProgressColumn,
 )
 
-from ytmusic.common import (
+from ytmusic import (
     Config,
     setup_ytmusic,
-    logger,
     select_playlist,
     search_ytmusic_tracks,
     select_match,
     add_track_to_ytmusic,
 )
+from logger import FileLogger
 from local_files.music_file import MusicFile
 
 config = Config()
+logger = FileLogger("scripts/local_to_ytmusic.log")
 
 
 def main() -> None:

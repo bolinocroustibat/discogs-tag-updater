@@ -10,14 +10,13 @@ from rich.progress import (
     TaskProgressColumn,
 )
 
-from spotify.common import (
+from spotify import (
     Config as SpotifyConfig,
     setup_spotify,
-    logger,
     select_playlist as select_spotify_playlist,
     get_spotify_track_details,
 )
-from ytmusic.common import (
+from ytmusic import (
     Config as YTMusicConfig,
     setup_ytmusic,
     select_playlist as select_ytmusic_playlist,
@@ -26,6 +25,9 @@ from ytmusic.common import (
     select_match,
     add_track_to_ytmusic,
 )
+from logger import FileLogger
+
+logger = FileLogger("scripts/spotify_to_ytmusic.log")
 
 spotify_config = SpotifyConfig()
 ytmusic_config = YTMusicConfig()

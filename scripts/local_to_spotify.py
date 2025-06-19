@@ -9,18 +9,19 @@ from rich.progress import (
     TaskProgressColumn,
 )
 
-from spotify.common import (
+from spotify import (
     Config,
     setup_spotify,
-    logger,
     select_playlist,
     search_spotify,
     select_match,
     add_track_to_spotify,
 )
+from logger import FileLogger
 from local_files.music_file import MusicFile
 
 config = Config()
+logger = FileLogger("scripts/local_to_spotify.log")
 
 
 def main() -> None:
