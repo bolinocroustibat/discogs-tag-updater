@@ -1,4 +1,3 @@
-import os
 import sys
 import tomllib
 from pathlib import Path
@@ -11,7 +10,7 @@ from rich.progress import (
     TaskProgressColumn,
 )
 
-from local_files import logger, AUDIO_FILES_EXTENSIONS
+from local_files import logger, AUDIO_FILES_EXTENSIONS, rename_file
 from discogs import DTag, Config as DiscogsConfig
 import discogs_client as dc
 
@@ -85,23 +84,10 @@ def update_tags_from_discogs(directory: Path, config=None, ds=None) -> None:
             )
 
             # Rename file
-            new_filename_start: str = f"{tag_file.artist} - {tag_file.title}"
-            if (
-                config.rename_file
-                and tag_file.artist
-                and tag_file.title
-                and (
-                    not tag_file.original_filename.startswith(new_filename_start)
-                )  # TODO: improve with regex to keep the parenthesis and brackets
-            ):
-                new_filename: str = f"{new_filename_start}{tag_file.suffix}"
-                new_path: Path = tag_file.path.parent / new_filename
-                os.rename(tag_file.path, new_path)
-                tag_file.path = new_path
-                renamed += 1
-                logger.success(
-                    f"Renamed: {tag_file.original_filename} ➔ {new_filename}"
-                )
+            if config.rename_file and tag_file.artist and tag_file.title:
+                was_renamed, was_skipped = rename_file(tag_file, confirm=False)
+                if was_renamed:
+                    renamed += 1
 
             # Search on Discogs and update
             if tag_file.search() is None:

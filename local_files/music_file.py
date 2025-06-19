@@ -4,6 +4,8 @@ from mutagen.flac import FLAC
 from mutagen.mp4 import MP4
 from mutagen.oggvorbis import OggVorbis
 from mutagen.wave import WAVE
+from mutagen._file import File
+from mutagen.id3._util import ID3NoHeaderError
 
 from local_files.logger import logger
 
@@ -46,41 +48,57 @@ class MusicFile:
 
         Note:
             - FLAC: Reads from FLAC metadata tags
-            - MP3: Reads from ID3 tags using EasyID3
+            - MP3: Uses EasyID3 first (more reliable), then falls back to generic ID3 tags
             - M4A: Reads from MP4 metadata tags
             - OGG: Reads from Ogg Vorbis tags
             - WAV: Reads from WAV metadata tags (limited support)
+            - Generic fallback: Uses mutagen.File for any format
             - Logs errors if tag reading fails for any format
         """
+        # Try format-specific handlers first
         if self.suffix == ".flac":
             try:
                 audio = FLAC(self.path)
-                self.artist = audio["artist"][0]
-                self.title = audio["title"][0]
+                if audio.get("artist") and audio.get("title"):
+                    self.artist = audio["artist"][0]
+                    self.title = audio["title"][0]
+                    return
             except Exception as e:
                 logger.error(f"Error reading FLAC tags: {e}")
 
         elif self.suffix == ".mp3":
+            # Try EasyID3 first (more reliable for MP3)
             try:
-                audio = EasyID3(self.path)
-                self.artist = audio["artist"][0]
-                self.title = audio["title"][0]
+                tags = EasyID3(self.path)
+                if tags is not None:
+                    artist = tags.get("artist", [""])[0]
+                    title = tags.get("title", [""])[0]
+                    if artist and title:
+                        self.artist = artist
+                        self.title = title
+                        return
+            except ID3NoHeaderError:
+                pass
             except Exception as e:
-                logger.error(f"Error reading MP3 tags: {e}")
+                logger.error(f"Error reading MP3 EasyID3 tags: {e}")
 
         elif self.suffix == ".m4a":
             try:
                 audio = MP4(self.path)
-                self.artist = audio["\xa9ART"][0]
-                self.title = audio["\xa9nam"][0]
+                if audio.get("\xa9ART") and audio.get("\xa9nam"):
+                    self.artist = audio["\xa9ART"][0]
+                    self.title = audio["\xa9nam"][0]
+                    return
             except Exception as e:
                 logger.error(f"Error reading M4A tags: {e}")
 
         elif self.suffix == ".ogg":
             try:
                 audio = OggVorbis(self.path)
-                self.artist = audio["artist"][0]
-                self.title = audio["title"][0]
+                if audio.get("artist") and audio.get("title"):
+                    self.artist = audio["artist"][0]
+                    self.title = audio["title"][0]
+                    return
             except Exception as e:
                 logger.error(f"Error reading OGG tags: {e}")
 
@@ -94,3 +112,28 @@ class MusicFile:
                     pass
             except Exception as e:
                 logger.error(f"Error reading WAV tags: {e}")
+
+        # Generic fallback using mutagen.File
+        try:
+            audio = File(self.path)
+            if audio is None:
+                logger.error(f"Could not read audio file: {self.path}")
+                return
+
+            # Try generic tags
+            if hasattr(audio, "tags") and audio.tags is not None:
+                try:
+                    artist = audio.tags.get("TPE1", [""])[0]
+                    title = audio.tags.get("TIT2", [""])[0]
+                    if artist and title:
+                        self.artist = artist
+                        self.title = title
+                        return
+                except (IndexError, TypeError):
+                    pass
+
+        except Exception as e:
+            logger.error(f"Error reading generic tags from {self.path}: {e}")
+
+        # If we get here, we couldn't extract tags
+        logger.warning(f"Missing artist or title tags in: {self.path}")

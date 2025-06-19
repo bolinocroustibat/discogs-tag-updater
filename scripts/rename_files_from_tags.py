@@ -2,9 +2,7 @@ import sys
 import tomllib
 from pathlib import Path
 
-from local_files.common import logger, get_music_files
-from local_files.music_file import MusicFile
-from local_files.rename_file import rename_file
+from local_files import logger, get_music_files, MusicFile, rename_file
 
 
 def rename_files_from_tags() -> None:

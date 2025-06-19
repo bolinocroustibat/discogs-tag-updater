@@ -286,12 +286,25 @@ class DTag(MusicFile):
 
 
 def clean(string: str) -> str:
+    """Clean and normalize artist/title strings for better Discogs search matching.
+    
+    Removes common variations and formatting that can interfere with finding
+    the correct release on Discogs.
+    """
+    # Remove parenthetical content like "(feat. Artist)", "(Radio Edit)", etc.
     string = re.sub(r"\([^)]*\)", "", string).strip()
+    
+    # Take only the first part before commas (common in artist names)
     if "," in string:
         string = string.split(",")[0].strip()
+    
+    # Take only the first part before ampersands (collaborations)
     if "&" in string:
         string = string.split("&")[0].strip()
+    
+    # Remove specific problematic terms that can interfere with search
     blacklist = ["'", "(Deluxe)"]
     for c in blacklist:
         string = string.replace(c, "")
+    
     return string

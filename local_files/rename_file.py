@@ -1,7 +1,7 @@
 import re
 import inquirer
 
-from local_files.common import logger
+from local_files.logger import logger
 from local_files.music_file import MusicFile
 
 
@@ -18,11 +18,12 @@ def sanitize_filename(filename: str) -> str:
     return re.sub(invalid_chars, "_", filename)
 
 
-def rename_file(music_file: MusicFile) -> tuple[bool, bool]:
+def rename_file(music_file: MusicFile, confirm: bool = True) -> tuple[bool, bool]:
     """Rename file to 'artist - title.ext' format
 
     Args:
         music_file: MusicFile object (or subclass like DTag) containing path, artist, and title information
+        confirm: Whether to ask for user confirmation before renaming (default: True)
 
     Returns:
         tuple[bool, bool]: (was_renamed, was_skipped)
@@ -46,18 +47,19 @@ def rename_file(music_file: MusicFile) -> tuple[bool, bool]:
             logger.warning(f"Target file already exists: {new_path}")
             return False, True
 
-        # Ask for confirmation
-        questions = [
-            inquirer.Confirm(
-                "confirm",
-                message=f"Rename '{music_file.path.name}' to '{new_name}'?",
-                default=True,
-            ),
-        ]
-        answers = inquirer.prompt(questions)
-        if not answers or not answers["confirm"]:
-            logger.info(f"Skipping rename of: {music_file.path}")
-            return False, True
+        # Ask for confirmation if requested
+        if confirm:
+            questions = [
+                inquirer.Confirm(
+                    "confirm",
+                    message=f"Rename '{music_file.path.name}' to '{new_name}'?",
+                    default=True,
+                ),
+            ]
+            answers = inquirer.prompt(questions)
+            if not answers or not answers["confirm"]:
+                logger.info(f"Skipping rename of: {music_file.path}")
+                return False, True
 
         # Rename file
         music_file.path.rename(new_path)
