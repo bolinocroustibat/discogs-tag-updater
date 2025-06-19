@@ -63,7 +63,7 @@ def update_tags_from_discogs(directory: Path, config=None, ds=None) -> None:
     renamed: int = 0
     total: int = 0
     files = {
-        DTag(path=p, suffix=p.suffix, original_filename=p.name, config=config, ds=ds)
+        DTag(path=p, original_filename=p.name, config=config, ds=ds)
         for p in directory.rglob("*")
         if p.suffix in AUDIO_FILES_EXTENSIONS
     }

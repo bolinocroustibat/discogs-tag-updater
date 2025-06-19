@@ -15,32 +15,33 @@ from mutagen.mp4 import MP4, MP4Cover, MP4StreamInfoError
 from mutagen._util import MutagenError
 
 from local_files.logger import logger
+from local_files.music_file import MusicFile
 
 
-class DTag:
-    def __init__(
-        self, path: Path, suffix: str, original_filename: str, config, ds
-    ) -> None:
-        self.path: Path = path
+class DTag(MusicFile):
+    def __init__(self, path: Path, original_filename: str, config, ds) -> None:
+        # Initialize parent class
+        super().__init__(path)
+
+        # DTag-specific attributes
         self.original_filename: str = original_filename
-        self.suffix: str = suffix
         self.config = config
         self.ds = ds
         self.cover_embedded = False
-        self.artist: str = ""
-        self.title: str = ""
         self.local_genres = ""
         self.genres: str = ""
         self.local_year: str = ""
         self.year: str = ""
-        self._get_tag()
         self.year_found: bool = False
         self.genres_found: bool = False
         self.year_updated: bool = False
         self.genres_updated: bool = False
         self.cover_updated: bool = False
 
-        # clean title and artist tags
+        # Get additional tags (genres, year, cover info)
+        self._get_additional_tags()
+
+        # Clean title and artist tags
         self.artist: str = clean(string=self.artist)
         self.title: str = clean(string=self.title)
 
@@ -66,17 +67,15 @@ class DTag:
         }
         return json.dumps(tags)
 
-    def _get_tag(self) -> None:
+    def _get_additional_tags(self) -> None:
+        """Extract additional tags (genres, year, cover) that are specific to DTag."""
         if self.suffix == ".flac":
             try:
                 audio = FLAC(self.path)
-                self.artist = audio["artist"][0]
-                self.title = audio["title"][0]
                 if audio.get("genre"):
                     self.local_genres = audio["genre"][0]
                 if audio.get("date"):
                     self.local_year = audio["date"][0]
-
                 if audio.pictures:
                     self.cover_embedded = True
             except (FLACNoHeaderError, Exception):
@@ -85,8 +84,6 @@ class DTag:
         elif self.suffix == ".mp3":
             try:
                 audio = EasyID3(self.path)
-                self.artist = audio["artist"][0]
-                self.title = audio["title"][0]
                 if audio.get("genre"):
                     self.local_genres = audio["genre"][0]
                 if audio.get("date"):
@@ -96,15 +93,12 @@ class DTag:
                 for k in audio.keys():
                     if "covr" in k or "APIC" in k:
                         self.cover_embedded = True
-
             except (HeaderNotFoundError, MutagenError, KeyError):
                 pass
 
         elif self.suffix == ".m4a":
             try:
                 audio = MP4(self.path)
-                self.artist = audio["\xa9ART"][0]
-                self.title = audio["\xa9nam"][0]
                 if audio.get("\xa9gen"):
                     self.local_genres = audio["\xa9gen"][0]
                 if audio.get("\xa9day"):

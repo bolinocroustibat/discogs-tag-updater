@@ -22,7 +22,7 @@ def rename_file(music_file: MusicFile) -> tuple[bool, bool]:
     """Rename file to 'artist - title.ext' format
 
     Args:
-        music_file: MusicFile object containing path, artist, and title information
+        music_file: MusicFile object (or subclass like DTag) containing path, artist, and title information
 
     Returns:
         tuple[bool, bool]: (was_renamed, was_skipped)
@@ -33,7 +33,7 @@ def rename_file(music_file: MusicFile) -> tuple[bool, bool]:
         title = sanitize_filename(music_file.title)
 
         # Create new filename
-        new_name = f"{artist} - {title}{music_file.path.suffix}"
+        new_name = f"{artist} - {title}{music_file.suffix}"
         new_path = music_file.path.parent / new_name
 
         # Skip if filename is already correct
