@@ -18,9 +18,11 @@ from local_files.logger import logger
 
 
 class DTag:
-    def __init__(self, path: Path, suffix: str, filename: str, config, ds) -> None:
+    def __init__(
+        self, path: Path, suffix: str, original_filename: str, config, ds
+    ) -> None:
         self.path: Path = path
-        self.filename: str = filename
+        self.original_filename: str = original_filename
         self.suffix: str = suffix
         self.config = config
         self.ds = ds

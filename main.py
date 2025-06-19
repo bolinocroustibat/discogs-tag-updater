@@ -5,9 +5,9 @@ import tomllib
 import discogs_client as dc
 
 from discogs import Config as DiscogsConfig
-from local_files.logger import logger as discogs_logger
-from local_files.update_tags import update_tags_from_discogs
-from local_files.rename_from_tags import rename_files_from_tags
+from local_files import logger as discogs_logger
+from scripts.update_tags_from_discogs import update_tags_from_discogs
+from scripts.rename_files_from_tags import rename_files_from_tags
 
 from spotify import Config as SpotifyConfig
 from ytmusic import Config as YTMusicConfig

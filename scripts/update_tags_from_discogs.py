@@ -1,5 +1,6 @@
 import os
 import sys
+import tomllib
 from pathlib import Path
 
 from rich.progress import (
@@ -10,8 +11,9 @@ from rich.progress import (
     TaskProgressColumn,
 )
 
-from local_files.common import logger, AUDIO_FILES_EXTENSIONS
-from discogs import DTag
+from local_files import logger, AUDIO_FILES_EXTENSIONS
+from discogs import DTag, Config as DiscogsConfig
+import discogs_client as dc
 
 
 def update_tags_from_discogs(directory: Path, config=None, ds=None) -> None:
@@ -61,7 +63,7 @@ def update_tags_from_discogs(directory: Path, config=None, ds=None) -> None:
     renamed: int = 0
     total: int = 0
     files = {
-        DTag(path=p, suffix=p.suffix, filename=p.name, config=config, ds=ds)
+        DTag(path=p, suffix=p.suffix, original_filename=p.name, config=config, ds=ds)
         for p in directory.rglob("*")
         if p.suffix in AUDIO_FILES_EXTENSIONS
     }
@@ -79,7 +81,7 @@ def update_tags_from_discogs(directory: Path, config=None, ds=None) -> None:
             total += 1
             logger.log(
                 "____________________________________________________________________\n"
-                + f"File: {tag_file.filename}"
+                + f"File: {tag_file.original_filename}"
             )
 
             # Rename file
@@ -89,15 +91,17 @@ def update_tags_from_discogs(directory: Path, config=None, ds=None) -> None:
                 and tag_file.artist
                 and tag_file.title
                 and (
-                    not tag_file.filename.startswith(new_filename_start)
+                    not tag_file.original_filename.startswith(new_filename_start)
                 )  # TODO: improve with regex to keep the parenthesis and brackets
             ):
                 new_filename: str = f"{new_filename_start}{tag_file.suffix}"
-                new_path: Path = Path(tag_file.path).parent / new_filename
+                new_path: Path = tag_file.path.parent / new_filename
                 os.rename(tag_file.path, new_path)
                 tag_file.path = new_path
                 renamed += 1
-                logger.success(f"Renamed: {tag_file.filename} ➔ {new_filename}")
+                logger.success(
+                    f"Renamed: {tag_file.original_filename} ➔ {new_filename}"
+                )
 
             # Search on Discogs and update
             if tag_file.search() is None:
@@ -129,3 +133,30 @@ def update_tags_from_discogs(directory: Path, config=None, ds=None) -> None:
     logger.error(f"With Discogs info not found: {not_found}")
     logger.warning(f"Renamed: {renamed}\n")
     input("Press Enter to exit...")
+
+
+if __name__ == "__main__":
+    # Get media directory from config
+    config_path = Path("config.toml")
+    if not config_path.is_file():
+        logger.error("Configuration file not found")
+        sys.exit(1)
+
+    try:
+        with open(config_path, "rb") as f:
+            config_data = tomllib.load(f)
+            media_path = Path(config_data["local_files"]["path"].replace("\\", ""))
+    except Exception as e:
+        logger.error(f"Error reading config: {e}")
+        sys.exit(1)
+
+    if not media_path.is_dir():
+        logger.error(f"Media directory not found: {media_path}")
+        sys.exit(1)
+
+    # Initialize Discogs config and client
+    discogs_config = DiscogsConfig()
+    ds = dc.Client("discogs_tag/0.5", user_token=discogs_config.token)
+
+    # Run the update
+    update_tags_from_discogs(media_path, discogs_config, ds)
