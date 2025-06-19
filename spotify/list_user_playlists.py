@@ -1,8 +1,6 @@
 from spotify.types import SpotifyPlaylistInfo
 import spotipy
-from logger import FileLogger
-
-logger = FileLogger("spotify/spotify.log")
+from spotify.logger import logger
 
 
 def list_user_playlists(sp: spotipy.Spotify) -> list[SpotifyPlaylistInfo]:

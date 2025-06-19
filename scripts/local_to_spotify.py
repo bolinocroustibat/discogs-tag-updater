@@ -21,7 +21,7 @@ from logger import FileLogger
 from local_files.music_file import MusicFile
 
 config = Config()
-logger = FileLogger("scripts/local_to_spotify.log")
+logger = FileLogger(Path("scripts") / "local_to_spotify.log")
 
 
 def main() -> None:

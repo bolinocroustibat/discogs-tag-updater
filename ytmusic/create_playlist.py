@@ -1,8 +1,5 @@
 from ytmusicapi import YTMusic
-from logger import FileLogger
-from pathlib import Path
-
-logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
+from ytmusic.logger import logger
 
 
 def create_playlist(ytm: YTMusic, name: str, description: str = "") -> str:

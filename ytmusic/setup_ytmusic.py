@@ -4,11 +4,9 @@ from ytmusic.config import Config
 from ytmusic.check_ytmusic_setup_oauth import check_ytmusic_setup_oauth
 from ytmusic.check_ytmusic_setup_browser import check_ytmusic_setup_browser
 from ytmusic.choose_auth_method import choose_auth_method
-from logger import FileLogger
 
 OAUTH_PATH = Path("ytmusic") / "oauth.json"
 BROWSER_PATH = Path("ytmusic") / "browser.json"
-logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
 
 
 def setup_ytmusic() -> YTMusic:

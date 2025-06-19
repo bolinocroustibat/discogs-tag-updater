@@ -1,9 +1,8 @@
 from pathlib import Path
 import sys
-from logger import FileLogger
+from ytmusic.logger import logger
 
 BROWSER_PATH = Path("ytmusic") / "browser.json"
-logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
 
 
 def check_ytmusic_setup_browser() -> None:

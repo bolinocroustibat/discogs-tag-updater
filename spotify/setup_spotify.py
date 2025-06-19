@@ -1,9 +1,7 @@
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from spotify.config import Config
-from logger import FileLogger
-
-logger = FileLogger("spotify/spotify.log")
+from spotify.logger import logger
 
 
 def setup_spotify() -> spotipy.Spotify:

@@ -1,8 +1,6 @@
 import spotipy
 import time
-from logger import FileLogger
-
-logger = FileLogger("spotify/spotify.log")
+from spotify.logger import logger
 
 
 def add_track_to_spotify(

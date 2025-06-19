@@ -1,10 +1,8 @@
 from ytmusicapi import YTMusic
 import time
-from logger import FileLogger
-from pathlib import Path
+from ytmusic.logger import logger
 
 MAX_MATCHES_TO_DISPLAY = 4  # Maximum number of matches to show for each track
-logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
 
 
 def search_ytmusic_track(

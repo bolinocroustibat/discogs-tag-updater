@@ -1,9 +1,6 @@
 from ytmusicapi import YTMusic
 import sys
-from logger import FileLogger
-from pathlib import Path
-
-logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
+from ytmusic.logger import logger
 
 
 def get_ytmusic_track_details(ytm: YTMusic, ytmusic_playlist_id: str) -> list[dict]:

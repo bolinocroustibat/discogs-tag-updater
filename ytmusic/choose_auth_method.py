@@ -1,8 +1,4 @@
 import inquirer
-from logger import FileLogger
-from pathlib import Path
-
-logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
 
 
 def choose_auth_method() -> str:

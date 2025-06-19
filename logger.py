@@ -1,5 +1,6 @@
 import logging
 import logging.handlers
+from pathlib import Path
 
 
 class FileLogger:
@@ -14,7 +15,7 @@ class FileLogger:
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
 
-    def __init__(self, log_file_path: str) -> None:
+    def __init__(self, log_file: Path) -> None:
         # logger
         self.logger = logging.getLogger("discogs_tag")
         self.logger.setLevel(20)
@@ -22,7 +23,7 @@ class FileLogger:
         # handler
         five_mbytes = 10**6 * 5
         handler = logging.handlers.RotatingFileHandler(
-            log_file_path, maxBytes=five_mbytes, encoding="UTF-8", backupCount=0
+            str(log_file), maxBytes=five_mbytes, encoding="UTF-8", backupCount=0
         )
         handler.setLevel(20)
 

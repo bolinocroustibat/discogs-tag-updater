@@ -1,8 +1,6 @@
 import spotipy
 import sys
-from logger import FileLogger
-
-logger = FileLogger("spotify/spotify.log")
+from spotify.logger import logger
 
 
 def get_spotify_track_details(

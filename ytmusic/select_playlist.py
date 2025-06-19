@@ -1,10 +1,7 @@
 from ytmusicapi import YTMusic
 import inquirer
 from ytmusic.list_user_playlists import list_user_playlists
-from logger import FileLogger
-from pathlib import Path
-
-logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
+from ytmusic.logger import logger
 
 
 def select_playlist(ytm: YTMusic, playlist_id: str | None = None) -> str:

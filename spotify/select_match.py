@@ -1,7 +1,5 @@
 import spotipy
-from logger import FileLogger
-
-logger = FileLogger("spotify/spotify.log")
+from spotify.logger import logger
 
 
 def select_match(sp: spotipy.Spotify, matches: list[dict]) -> str | None:

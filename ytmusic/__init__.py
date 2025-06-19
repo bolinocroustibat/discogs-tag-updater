@@ -1,4 +1,3 @@
-# Import all functions from dedicated files
 from ytmusic.config import Config
 from ytmusic.types import YTMusicPlaylistInfo
 from ytmusic.setup_ytmusic import setup_ytmusic
@@ -13,8 +12,10 @@ from ytmusic.create_playlist import create_playlist
 from ytmusic.search_ytmusic_track import search_ytmusic_track
 from ytmusic.select_match import select_match
 from ytmusic.add_track_to_ytmusic import add_track_to_ytmusic
+from ytmusic.logger import logger as ytmusic_logger
 
 __all__ = [
+    "ytmusic_logger",
     "Config",
     "YTMusicPlaylistInfo",
     "setup_ytmusic",

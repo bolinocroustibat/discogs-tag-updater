@@ -13,7 +13,7 @@ from ytmusic import (
     Config,
     setup_ytmusic,
     select_playlist,
-    search_ytmusic_tracks,
+    search_ytmusic_track,
     select_match,
     add_track_to_ytmusic,
 )
@@ -21,7 +21,7 @@ from logger import FileLogger
 from local_files.music_file import MusicFile
 
 config = Config()
-logger = FileLogger("scripts/local_to_ytmusic.log")
+logger = FileLogger(Path("scripts") / "local_to_ytmusic.log")
 
 
 def main() -> None:
@@ -73,7 +73,7 @@ def main() -> None:
     ) as progress:
         task = progress.add_task("Processing files...", total=len(music_files))
         for music_file in music_files:
-            matches = search_ytmusic_tracks(
+            matches = search_ytmusic_track(
                 ytm, music_file.title, music_file.artist, music_file.path.name
             )
             if matches:

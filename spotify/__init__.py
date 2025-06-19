@@ -1,4 +1,3 @@
-# Import all functions from dedicated files
 from spotify.config import Config
 from spotify.types import SpotifyPlaylistInfo
 from spotify.setup_spotify import setup_spotify
@@ -9,8 +8,10 @@ from spotify.get_spotify_track_ids import get_spotify_track_ids
 from spotify.search_spotify_track import search_spotify_track
 from spotify.select_match import select_match
 from spotify.add_track_to_spotify import add_track_to_spotify
+from spotify.logger import logger as spotify_logger
 
 __all__ = [
+    "spotify_logger",
     "Config",
     "SpotifyPlaylistInfo",
     "setup_spotify",

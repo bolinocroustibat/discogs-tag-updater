@@ -27,7 +27,7 @@ from ytmusic import (
 )
 from logger import FileLogger
 
-logger = FileLogger("scripts/spotify_to_ytmusic.log")
+logger = FileLogger(Path("scripts") / "spotify_to_ytmusic.log")
 
 spotify_config = SpotifyConfig()
 ytmusic_config = YTMusicConfig()

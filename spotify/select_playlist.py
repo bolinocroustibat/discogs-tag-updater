@@ -1,9 +1,7 @@
 import spotipy
 import inquirer
 from spotify.list_user_playlists import list_user_playlists
-from logger import FileLogger
-
-logger = FileLogger("spotify/spotify.log")
+from spotify.logger import logger
 
 
 def select_playlist(sp: spotipy.Spotify, playlist_id: str | None = None) -> str:

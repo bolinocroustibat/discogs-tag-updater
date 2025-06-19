@@ -1,9 +1,6 @@
 from ytmusicapi import YTMusic
 import time
-from logger import FileLogger
-from pathlib import Path
-
-logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
+from ytmusic.logger import logger
 
 
 def add_track_to_ytmusic(

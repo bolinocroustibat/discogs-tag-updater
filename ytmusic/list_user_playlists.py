@@ -1,8 +1,6 @@
 from ytmusic.types import YTMusicPlaylistInfo
 from ytmusicapi import YTMusic
-from logger import FileLogger
-
-logger = FileLogger("ytmusic/ytmusic.log")
+from ytmusic.logger import logger
 
 
 def list_user_playlists(ytm: YTMusic) -> list[YTMusicPlaylistInfo]:

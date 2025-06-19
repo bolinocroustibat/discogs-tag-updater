@@ -1,10 +1,9 @@
 from pathlib import Path
 import sys
 from ytmusic.config import Config
-from logger import FileLogger
+from ytmusic.logger import logger
 
 OAUTH_PATH = Path("ytmusic") / "oauth.json"
-logger = FileLogger(str(Path("ytmusic") / "ytmusic.log"))
 
 
 def check_ytmusic_setup_oauth() -> None:

@@ -8,7 +8,7 @@ import spotipy
 from spotify import setup_spotify, select_playlist
 from logger import FileLogger
 
-logger = FileLogger("scripts/spotify_duplicates.log")
+logger = FileLogger(Path("scripts") / "spotify_duplicates.log")
 
 
 class TrackInstance(TypedDict):
